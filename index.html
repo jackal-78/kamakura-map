@@ -1,0 +1,2010 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>鎌倉散策記録マップ</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+<style>
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+  }
+  #map {
+    width: 100%;
+    height: 100vh;
+  }
+  .popup-category {
+    display: inline-block;
+    font-size: 12px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    color: #fff;
+    margin-bottom: 4px;
+  }
+  .popup-memo {
+    margin-top: 4px;
+    font-size: 13px;
+    color: #444;
+  }
+  .popup-image {
+    display: block;
+    width: 100%;
+    max-width: 240px;
+    height: 140px;
+    object-fit: cover;
+    border-radius: 6px;
+    margin-bottom: 6px;
+  }
+  .popup-address {
+    margin-top: 2px;
+    font-size: 12px;
+    color: #777;
+  }
+  .popup-links {
+    display: flex;
+    gap: 6px;
+    margin-top: 8px;
+  }
+  .popup-links a {
+    flex: 1;
+    display: block;
+    text-align: center;
+    padding: 6px 4px;
+    border-radius: 5px;
+    font-size: 12px;
+    text-decoration: none;
+    border: 1px solid #ccc;
+    color: #333;
+  }
+  .popup-links a.maps-link {
+    background: #eef6ff;
+    border-color: #b6d4fb;
+    color: #1a4a8a;
+  }
+  .drama-pin {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 50% 50% 50% 0;
+    background: #d6336c;
+    border: 2px solid #ffffff;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+    transform: rotate(-45deg);
+  }
+  .drama-pin span {
+    transform: rotate(45deg);
+    font-size: 13px;
+  }
+  .drama2-pin {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 50% 50% 50% 0;
+    background: #16a085;
+    border: 2px solid #ffffff;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+    transform: rotate(-45deg);
+  }
+  .drama2-pin span {
+    transform: rotate(45deg);
+    font-size: 13px;
+  }
+  .cafe-pin {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 50% 50% 50% 0;
+    background: #8b5e34;
+    border: 2px solid #ffffff;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+    transform: rotate(-45deg);
+  }
+  .cafe-pin span {
+    transform: rotate(45deg);
+    font-size: 13px;
+  }
+  .date-pin {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 50% 50% 50% 0;
+    background: #8e44ad;
+    border: 2px solid #ffffff;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+    transform: rotate(-45deg);
+  }
+  .date-pin span {
+    transform: rotate(45deg);
+    font-size: 13px;
+  }
+  .insider-pin {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 50% 50% 50% 0;
+    background: #2c3e50;
+    border: 2px solid #ffffff;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+    transform: rotate(-45deg);
+  }
+  .insider-pin span {
+    transform: rotate(45deg);
+    font-size: 13px;
+  }
+  .classic-pin {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 50% 50% 50% 0;
+    background: #a1424a;
+    border: 2px solid #ffffff;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+    transform: rotate(-45deg);
+  }
+  .classic-pin span {
+    transform: rotate(45deg);
+    font-size: 13px;
+  }
+  .map-legend {
+    background: #ffffff;
+    padding: 8px 10px;
+    border-radius: 6px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+    font-size: 12px;
+    line-height: 1.8;
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+  .map-legend label {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .map-legend input[type="checkbox"] {
+    cursor: pointer;
+  }
+  .map-legend .dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-right: 6px;
+    vertical-align: middle;
+  }
+  .map-legend .pin {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50% 50% 50% 0;
+    background: #d6336c;
+    margin-right: 6px;
+    vertical-align: middle;
+    transform: rotate(-45deg);
+  }
+  .map-legend .pin-drama2 {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50% 50% 50% 0;
+    background: #16a085;
+    margin-right: 6px;
+    vertical-align: middle;
+    transform: rotate(-45deg);
+  }
+  .map-legend .pin-cafe {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50% 50% 50% 0;
+    background: #8b5e34;
+    margin-right: 6px;
+    vertical-align: middle;
+    transform: rotate(-45deg);
+  }
+  .map-legend .pin-date {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50% 50% 50% 0;
+    background: #8e44ad;
+    margin-right: 6px;
+    vertical-align: middle;
+    transform: rotate(-45deg);
+  }
+  .map-legend .pin-insider {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50% 50% 50% 0;
+    background: #2c3e50;
+    margin-right: 6px;
+    vertical-align: middle;
+    transform: rotate(-45deg);
+  }
+  .map-legend .pin-classic {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50% 50% 50% 0;
+    background: #a1424a;
+    margin-right: 6px;
+    vertical-align: middle;
+    transform: rotate(-45deg);
+  }
+  .map-legend .unvisited-toggle {
+    margin-top: 6px;
+    padding-top: 6px;
+    border-top: 1px solid #e5e5e5;
+    font-weight: bold;
+  }
+  .map-legend .visited-count {
+    margin-top: 6px;
+    padding-top: 6px;
+    border-top: 1px solid #e5e5e5;
+    font-weight: bold;
+    color: #2e7d32;
+  }
+  .visited-badge {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #2e7d32;
+    border: 2px solid #ffffff;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    color: #fff;
+  }
+  .favorite-badge {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #f9a825;
+    border: 2px solid #ffffff;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+  }
+  /* ---- 「spots」配列(駅・寺社・自然)用の色付きドット。クラスター化のためcircleMarkerではなくdivIconで描画 ---- */
+  .spot-dot {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 2px solid #ffffff;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+    box-sizing: border-box;
+  }
+  .favorite-toggle-btn {
+    background: none;
+    border: none;
+    font-size: 18px;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0 0 0 6px;
+    vertical-align: middle;
+  }
+
+  /* ---- 現在地ボタン / 現在地マーカー ---- */
+  .locate-btn {
+    background: #ffffff;
+    padding: 6px 10px;
+    border-radius: 4px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+    cursor: pointer;
+    font-size: 13px;
+    white-space: nowrap;
+  }
+  .user-location-dot {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #4285F4;
+    border: 3px solid #ffffff;
+    box-shadow: 0 0 5px rgba(0,0,0,0.5);
+  }
+
+  /* ---- 訪問記録フォーム / 記録カード ---- */
+  .visit-section {
+    margin-top: 8px;
+  }
+  .visit-form {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .visit-field-label {
+    font-size: 12px;
+    color: #555;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .visit-date-input,
+  .visit-memo-input {
+    font: inherit;
+    font-size: 13px;
+    padding: 5px 6px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+    width: 100%;
+  }
+  .visit-memo-input {
+    resize: vertical;
+    min-height: 42px;
+  }
+  .photo-picker-label {
+    display: inline-block;
+    width: fit-content;
+    font-size: 12px;
+    background: #eeeeee;
+    padding: 5px 9px;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  .photo-preview img {
+    display: block;
+    max-width: 100%;
+    max-height: 130px;
+    border-radius: 6px;
+    margin-top: 4px;
+    object-fit: cover;
+  }
+  .photo-remove-btn {
+    margin-top: 4px;
+    display: block;
+    font-size: 11px;
+    background: none;
+    border: none;
+    color: #c0392b;
+    cursor: pointer;
+    padding: 0;
+  }
+  .visit-submit-btn {
+    background: #2e7d32;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    padding: 7px 8px;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  .visit-cancel-btn {
+    background: #eeeeee;
+    color: #333;
+    border: none;
+    border-radius: 5px;
+    padding: 6px 8px;
+    font-size: 12px;
+    cursor: pointer;
+  }
+  .visit-record-title {
+    font-weight: bold;
+    color: #2e7d32;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+  .visit-record-date {
+    font-weight: normal;
+    font-size: 12px;
+    color: #666;
+  }
+  .visit-record-memo {
+    font-size: 13px;
+    color: #333;
+    margin-top: 4px;
+    white-space: pre-wrap;
+  }
+  .visit-record-photo {
+    display: block;
+    max-width: 100%;
+    max-height: 170px;
+    border-radius: 6px;
+    margin-top: 6px;
+    object-fit: cover;
+  }
+  .popup-links button {
+    flex: 1;
+    padding: 6px 4px;
+    border-radius: 5px;
+    font-size: 12px;
+    border: 1px solid #ccc;
+    background: #ffffff;
+    color: #333;
+    cursor: pointer;
+    font-family: inherit;
+  }
+
+  /* ---- サイドバー(スポット一覧) ---- */
+  .sidebar-toggle-btn {
+    background: #ffffff;
+    padding: 6px 10px;
+    border-radius: 4px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+    cursor: pointer;
+    font-size: 13px;
+    white-space: nowrap;
+  }
+  #sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 300px;
+    max-width: 85vw;
+    background: #ffffff;
+    box-shadow: 2px 0 10px rgba(0,0,0,0.3);
+    z-index: 1000;
+    overflow-y: auto;
+    transform: translateX(-100%);
+    transition: transform 0.2s ease;
+    box-sizing: border-box;
+    padding: 12px;
+  }
+  #sidebar.open {
+    transform: translateX(0);
+  }
+  #sidebar .sidebar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: bold;
+    font-size: 15px;
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #e5e5e5;
+  }
+  #sidebar-close {
+    border: none;
+    background: none;
+    font-size: 16px;
+    cursor: pointer;
+    color: #666;
+  }
+  #sidebar-list details {
+    margin-bottom: 4px;
+  }
+  #sidebar-list summary {
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 13px;
+    padding: 6px 2px;
+    list-style: none;
+  }
+  #sidebar-list summary::-webkit-details-marker {
+    display: none;
+  }
+  #sidebar-list ul {
+    list-style: none;
+    margin: 0 0 4px 0;
+    padding-left: 4px;
+  }
+  #sidebar-list li {
+    padding: 5px 6px;
+    cursor: pointer;
+    border-radius: 4px;
+    font-size: 13px;
+    color: #333;
+  }
+  #sidebar-list li:hover {
+    background: #f0f0f0;
+  }
+  #sidebar-list li.visited {
+    color: #2e7d32;
+  }
+  .sidebar-search-input {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    font: inherit;
+    font-size: 13px;
+    padding: 7px 8px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    margin-bottom: 10px;
+  }
+  .sidebar-search-empty {
+    font-size: 13px;
+    color: #888;
+    padding: 10px 4px;
+  }
+  .sidebar-search-result-count {
+    font-size: 12px;
+    color: #888;
+    margin-bottom: 6px;
+  }
+  /* ---- 訪問進捗バー ---- */
+  .progress-bar-track {
+    background: #e5e5e5;
+    border-radius: 3px;
+    height: 6px;
+    overflow: hidden;
+  }
+  .progress-bar-fill {
+    background: #2e7d32;
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.2s ease;
+  }
+  #sidebar-list summary {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .summary-label-row {
+    display: flex;
+    align-items: center;
+  }
+  .map-legend .overall-progress {
+    margin-top: 4px;
+  }
+
+  /* ---- AIルート提案パネル ---- */
+  .ai-toggle-btn {
+    background: linear-gradient(135deg, #6a3fa0, #8e44ad);
+    color: #fff;
+    padding: 6px 12px;
+    border-radius: 4px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: bold;
+    white-space: nowrap;
+  }
+  #ai-planner {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 340px;
+    max-width: 88vw;
+    background: #ffffff;
+    box-shadow: -2px 0 10px rgba(0,0,0,0.3);
+    z-index: 1000;
+    overflow-y: auto;
+    transform: translateX(100%);
+    transition: transform 0.2s ease;
+    box-sizing: border-box;
+    padding: 14px;
+  }
+  #ai-planner.open {
+    transform: translateX(0);
+  }
+  #ai-planner .ai-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: bold;
+    font-size: 15px;
+    margin-bottom: 4px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #e5e5e5;
+  }
+  #ai-planner .ai-subtitle {
+    font-size: 11.5px;
+    color: #888;
+    margin: 0 0 12px;
+    line-height: 1.5;
+  }
+  #ai-close {
+    border: none;
+    background: none;
+    font-size: 16px;
+    cursor: pointer;
+    color: #666;
+  }
+  .ai-field-label {
+    display: block;
+    font-size: 12px;
+    color: #555;
+    font-weight: bold;
+    margin: 12px 0 4px;
+  }
+  .ai-key-input, .ai-query-input {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    font: inherit;
+    font-size: 13px;
+    padding: 7px 8px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+  }
+  .ai-query-input {
+    resize: vertical;
+    min-height: 64px;
+  }
+  .ai-key-note {
+    font-size: 10.5px;
+    color: #999;
+    margin-top: 3px;
+    line-height: 1.5;
+  }
+  .ai-submit-btn {
+    margin-top: 12px;
+    width: 100%;
+    background: #6a3fa0;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    padding: 9px;
+    font-size: 13.5px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  .ai-submit-btn:disabled {
+    background: #b7a5cc;
+    cursor: default;
+  }
+  .ai-status {
+    margin-top: 12px;
+    font-size: 12.5px;
+    color: #666;
+  }
+  .ai-error {
+    margin-top: 12px;
+    padding: 8px 10px;
+    background: #fdecea;
+    color: #a1392b;
+    border-radius: 5px;
+    font-size: 12.5px;
+    line-height: 1.6;
+  }
+  .ai-result {
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 1px dashed #ccc;
+  }
+  .ai-result-summary {
+    font-size: 13px;
+    color: #333;
+    margin-bottom: 10px;
+    line-height: 1.6;
+  }
+  .ai-stop-list {
+    list-style: none;
+    margin: 0 0 12px;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .ai-stop-item {
+    background: #f7f5fa;
+    border-radius: 5px;
+    padding: 8px 10px;
+    font-size: 12.5px;
+    cursor: pointer;
+  }
+  .ai-stop-item:hover {
+    background: #efe9f5;
+  }
+  .ai-stop-item .ai-stop-name {
+    font-weight: bold;
+    color: #333;
+  }
+  .ai-stop-item .ai-stop-reason {
+    color: #666;
+    margin-top: 2px;
+  }
+  .ai-show-route-btn, .ai-clear-route-btn {
+    width: 100%;
+    padding: 8px;
+    border-radius: 5px;
+    font-size: 12.5px;
+    border: 1px solid #ccc;
+    background: #fff;
+    cursor: pointer;
+    margin-bottom: 6px;
+  }
+</style>
+</head>
+<body>
+
+<div id="map"></div>
+
+<div id="sidebar">
+  <div class="sidebar-header">
+    <span>スポット一覧</span>
+    <button id="sidebar-close" aria-label="閉じる">✕</button>
+  </div>
+  <input type="text" id="sidebar-search" class="sidebar-search-input" placeholder="🔍 スポット名で検索">
+  <div id="sidebar-list"></div>
+</div>
+
+<div id="ai-planner">
+  <div class="ai-header">
+    <span>✨ 今日のルート提案</span>
+    <button id="ai-close" aria-label="閉じる">✕</button>
+  </div>
+  <p class="ai-subtitle">やりたいことを自由に書くと、訪問済みの場所を考慮しながらClaude(Opus 5)がルートを提案します。</p>
+
+  <label class="ai-field-label" for="ai-key-input">Anthropic APIキー</label>
+  <input type="password" id="ai-key-input" class="ai-key-input" placeholder="sk-ant-...">
+  <p class="ai-key-note">このブラウザだけに保存され、Anthropic社のAPIに直接送信されます(サーバーは経由しません)。呼び出しごとに少額の利用料がかかります。</p>
+
+  <label class="ai-field-label" for="ai-query-input">今日はどんな一日にしたい?</label>
+  <textarea id="ai-query-input" class="ai-query-input" placeholder="例:午後から半日、カフェ中心にまだ行ってない場所を回りたい"></textarea>
+
+  <button id="ai-submit-btn" class="ai-submit-btn" type="button">この条件でルートを提案してもらう</button>
+
+  <div id="ai-status-area"></div>
+  <div id="ai-result-area"></div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+<script>
+  // ------------------------------------------------------------
+  // スポットデータ
+  // 新しい場所を追加したいときは、この配列に1件追加するだけでOK
+  //   id       : 一意なID(訪問記録の保存に使うので他と重複しないように)
+  //   name     : スポット名
+  //   category : カテゴリ名(色分けに使用。categoryColors に未登録なら灰色になる)
+  //   lat, lng : 緯度・経度
+  //   memo     : 補足メモ(なくてもOK)
+  // ------------------------------------------------------------
+  const spots = [
+    { id: 'spot-station',       name: '鎌倉駅',                     category: '駅',     lat: 35.3189, lng: 139.5500, memo: 'JR横須賀線・江ノ電の起点', image: 'https://upload.wikimedia.org/wikipedia/commons/f/fc/Enoden_Kamakura_Station.jpg' },
+    { id: 'spot-tsurugaoka',    name: '鶴岡八幡宮',                 category: '寺社',   lat: 35.3255, lng: 139.5564, memo: '鎌倉のシンボル的な神社', image: 'https://enokama.jp/wp-content/uploads/2022/04/22fuyu_enokama_B3W_tsurugaokahachimangu-1536x1024.jpg' },
+    { id: 'spot-kotokuin',      name: '高徳院(鎌倉大仏)',           category: '寺社',   lat: 35.3167, lng: 139.5359, memo: '長谷にある有名な大仏', image: 'https://enokama.jp/wp-content/uploads/2022/10/koutokuin-1536x1000.jpg' },
+    { id: 'spot-hasedera',      name: '長谷寺',                     category: '寺社',   lat: 35.3122, lng: 139.5347, memo: '眺望のよい花のお寺', image: 'https://enokama.jp/wp-content/uploads/2022/06/IMG_1899-1536x1024.jpg' },
+    { id: 'spot-kenchoji',      name: '建長寺',                     category: '寺社',   lat: 35.3363, lng: 139.5504, memo: '鎌倉五山第一位', image: 'https://enokama.jp/wp-content/uploads/2023/03/建長寺の桜　DSC_0080-1536x864.jpg' },
+    { id: 'spot-engakuji',      name: '円覚寺',                     category: '寺社',   lat: 35.3379, lng: 139.5479, memo: '北鎌倉駅すぐの禅寺', image: 'https://enokama.jp/wp-content/uploads/2021/11/DSCF3812-1536x1024.jpg' },
+    { id: 'spot-meigetsuin',    name: '明月院',                     category: '寺社',   lat: 35.3352, lng: 139.5459, memo: 'あじさい寺として有名', image: 'https://enokama.jp/wp-content/uploads/2023/03/meigetsuin_sakura-1536x1024.jpg' },
+    { id: 'spot-hokokuji',      name: '報国寺',                     category: '寺社',   lat: 35.3167, lng: 139.5661, memo: '竹の庭で有名', image: 'https://enokama.jp/wp-content/uploads/2025/01/DSCF2171-1024x683.jpg' },
+    { id: 'spot-zeniarai',      name: '銭洗弁財天宇賀福神社',       category: '寺社',   lat: 35.3186, lng: 139.5424, memo: 'お金を洗うと増えると言われる', image: 'https://enokama.jp/wp-content/uploads/2022/04/銭洗弁天_0007-1536x1025.jpg' },
+    { id: 'spot-yuigahama',     name: '由比ヶ浜海岸',               category: '自然',   lat: 35.3082, lng: 139.5432, memo: '鎌倉を代表する海岸', image: 'https://enokama.jp/wp-content/uploads/2021/11/由比ガ浜-1536x1024.jpg' },
+    { id: 'spot-koko-crossing', name: '鎌倉高校前踏切',             category: '自然',   lat: 35.3055, lng: 139.5265, memo: '海と江ノ電が見える有名スポット', image: 'https://upload.wikimedia.org/wikipedia/commons/8/8a/Kamakura_koukou_mae_Fumikiri_-_02.jpg' },
+    { id: 'spot-genjiyama',     name: '源氏山公園',                 category: '自然',   lat: 35.3264755, lng: 139.5434344, memo: '源頼朝ゆかりの丘陵公園。桜と紅葉の名所で、山頂には頼朝像が立つ', image: 'https://enokama.jp/wp-content/uploads/2021/11/genjiyama1.jpg' },
+    { id: 'spot-kuzuharaoka-hiking', name: '葛原岡・大仏ハイキングコース', category: '自然', lat: 35.3288091, lng: 139.5428744, memo: '北鎌倉~長谷を結ぶ初心者向けコース。葛原岡神社を経て森林浴が楽しめる', image: 'https://enokama.jp/wp-content/uploads/2022/04/kuzuharaokajinja1-1536x1024.jpg' },
+    { id: 'spot-tenen-hiking',  name: '天園ハイキングコース',       category: '自然',   lat: 35.3353059, lng: 139.5764227, memo: '鎌倉最高峰・大平山を含む本格コース(通称「鎌倉アルプス」)。相模湾と富士山を望む' },
+    { id: 'spot-kinugasayama',  name: '衣張山',                     category: '自然',   lat: 35.3156089, lng: 139.5668283, memo: '観光客の少ない隠れた絶景スポット。山頂から由比ヶ浜~材木座の海を一望できる' },
+    { id: 'spot-zaimokuza-beach', name: '材木座海岸',               category: '自然',   lat: 35.3048493, lng: 139.5505470, memo: '由比ヶ浜より静かなビーチ。沖には鎌倉時代の港の遺構「和賀江島」が残る', image: 'https://enokama.jp/wp-content/uploads/2026/03/26natsu_wakaenoshima_jitsu_5D4_1782_web-1536x1024.jpg' },
+    { id: 'spot-tokeiji',       name: '東慶寺',                     category: '寺社',   lat: 35.3355479, lng: 139.5463811, memo: '北鎌倉。"縁切り寺"として知られる古刹。梅や花菖蒲など四季の花でも有名', image: 'https://tokeiji.com/tokeiji_wp/wp-content/themes/tokeiji/assets/images/index/p_sanmon_sp.jpg' },
+    { id: 'spot-jochiji',       name: '浄智寺',                     category: '寺社',   lat: 35.3333982, lng: 139.5462449, memo: '北鎌倉。鎌倉五山第四位。趣のある鐘楼門と苔むした石段が印象的な静かな禅寺', image: 'https://enokama.jp/wp-content/uploads/2021/11/jochiji1-1024x682.jpg' },
+    { id: 'spot-ryukoji',       name: '龍口寺',                     category: '寺社',   lat: 35.3117107, lng: 139.4893788, memo: '西鎌倉・腰越。日蓮聖人ゆかりの霊跡。神奈川県内唯一の本格木造五重塔がある', image: 'https://enokama.jp/wp-content/uploads/2025/11/DSCF2861-1024x683.jpg' },
+    { id: 'spot-ofuna-kannon',  name: '大船観音寺',                 category: '寺社',   lat: 35.3530247, lng: 139.5284041, memo: '大船。高さ約25mの白衣観音像が大船のシンボル。展望台から街並みを一望できる', image: 'https://upload.wikimedia.org/wikipedia/commons/5/50/Ofuna-Kannon.jpg' },
+    { id: 'spot-ofuna-flower-center', name: '大船フラワーセンター(神奈川県立)', category: '自然', lat: 35.3480618, lng: 139.5209316, memo: '大船。四季折々の花が楽しめる県立植物園。シャクヤクのコレクションが有名', image: 'https://www.pref.kanagawa.jp/images/5243/syakuyaku.jpg' },
+  ];
+
+  // カテゴリごとの色分け
+  const categoryColors = {
+    '駅':     '#555555',
+    '寺社':   '#c0392b',
+    '自然':   '#27ae60',
+  };
+
+  // ------------------------------------------------------------
+  // ドラマ「最後から二番目の恋」ロケ地データ
+  // 実在するロケ地をピンク色の🎬ピンで表示(通常スポットと区別するため)
+  // ------------------------------------------------------------
+  const dramaSpots = [
+    { id: 'drama-gokurakuji-station', name: '極楽寺駅', lat: 35.3092118, lng: 139.5286725, memo: '江ノ電の駅。シリーズを通して繰り返し登場する物語の"起点"', image: 'https://upload.wikimedia.org/wikipedia/commons/e/e8/Gokurakuji_Station%2C_Enoden.JPG' },
+    { id: 'drama-sacanosita',         name: 'サカノシタ(旧cafe坂の下)', lat: 35.3111, lng: 139.5322, memo: '長倉家「カフェナガクラ」のモデルになった古民家カフェ', image: 'https://enokama.jp/wp-content/uploads/2023/12/1600px-topスライド1-1-1536x871.jpg' },
+    { id: 'drama-goryo-jinja',        name: '御霊神社', lat: 35.3109923, lng: 139.5327888, memo: '和平が江ノ電の踏切を通って帰宅する道。紫陽花の名所', image: 'https://enokama.jp/wp-content/uploads/2021/11/goryojinja1.jpg' },
+    { id: 'drama-venus-cafe',         name: 'Venus Cafe', lat: 35.3048864, lng: 139.5319281, memo: '典子(飯島直子)がアルバイトしていた海沿いのカフェ', image: 'https://enokama.jp/wp-content/uploads/2022/02/22haru_enokama_leaflet_venuscafe-1536x1024.jpg' },
+    { id: 'drama-hasedera',           name: '長谷寺(ロケ地)', lat: 35.3126, lng: 139.5351, memo: '第5話、鎌倉遠足の途中休憩地点', image: 'https://enokama.jp/wp-content/uploads/2022/06/IMG_1899-1536x1024.jpg' },
+    { id: 'drama-chikaramochiya',     name: '力餅家', lat: 35.3099556, lng: 139.5338090, memo: '千明(小泉今日子)が鎌倉視察の際に立ち寄った和菓子店', image: 'https://enokama.jp/wp-content/uploads/2022/01/chikaramochiya1.jpg' },
+    { id: 'drama-the-bank',           name: 'THE BANK', lat: 35.314914, lng: 139.546193, memo: '和平が同僚と飲んだ、元銀行を改装したバー', image: 'https://chinobouken.com/wp-content/uploads/2024/04/PXL_20240331_075336940_thebank.jpg' },
+    { id: 'drama-komyoji',            name: '光明寺', lat: 35.3033692, lng: 139.5545290, memo: 'フリーマーケット会場。和平がお見合い相手に声をかけられる', image: 'https://enokama.jp/wp-content/uploads/2023/03/komyoji1-1024x683.jpg' },
+    { id: 'drama-city-hall',          name: '鎌倉市役所', lat: 35.3191745, lng: 139.5472898, memo: '和平(中井貴一)の勤務先' },
+    { id: 'drama-yuigahama',          name: '由比ヶ浜(ロケ地)', lat: 35.3086, lng: 139.5436, memo: '海辺のシーンで繰り返し登場する砂浜', image: 'https://enokama.jp/wp-content/uploads/2021/11/由比ガ浜-1536x1024.jpg' },
+    { id: 'drama-ninotorii',          name: '二の鳥居', lat: 35.3194729, lng: 139.5523544, memo: '鎌倉遠足の集合場所。エンディングにも登場' },
+    { id: 'drama-zeniarai',           name: '銭洗弁財天(ロケ地)', lat: 35.3190, lng: 139.5420, memo: '千明たちがお金を洗うシーン', image: 'https://enokama.jp/wp-content/uploads/2022/04/銭洗弁天_0007-1536x1025.jpg' },
+    { id: 'drama-hokokuji',           name: '報国寺(ロケ地)', lat: 35.3171, lng: 139.5665, memo: '竹の庭。鎌倉遠足の目的地(通称「竹寺」)', image: 'https://enokama.jp/wp-content/uploads/2025/01/DSCF2171-1024x683.jpg' },
+    { id: 'drama-inamuragasaki-park', name: '稲村ヶ崎公園', lat: 35.3023736, lng: 139.5249973, memo: '海辺のシーンで頻繁に登場する公園', image: 'https://enokama.jp/wp-content/uploads/2025/05/IMG_7334-1536x1027.jpg' },
+    { id: 'drama-bergfeld-hase',      name: 'Bergfeld長谷店', lat: 35.3128150, lng: 139.5359333, memo: '最終回、和平と部下が今後について話す場所', image: 'https://enokama.jp/wp-content/uploads/2021/11/bergfeldhase2.jpg' },
+    { id: 'drama-iwata-coffee',       name: 'イワタ珈琲店', lat: 35.3193909, lng: 139.5513897, memo: '和平と秀子(美保純)がお茶した老舗喫茶店', image: 'https://enokama.jp/wp-content/uploads/2025/03/6_鎌倉-カフェ_イワタコーヒー店.jpg' },
+    { id: 'drama-cafe-bigaku',        name: 'カフェ鎌倉美学', lat: 35.3184716, lng: 139.5484840, memo: '最終回、千明と真平が別れ話をしたカフェ', image: 'https://enokama.jp/wp-content/uploads/2021/11/kamakurabigaku2-1.jpg' },
+    { id: 'drama-capio',              name: 'CAPIO(カピオ)', lat: 35.31066066871509, lng: 139.53306129751263, memo: '「長倉家」の外観ロケ地。築100年ほどの古民家で、現在はシチリア料理店として営業中(内観はサカノシタで撮影)', image: 'https://img.hanako.tokyo/2024/09/06102200/4AE2816.jpg' },
+  ];
+
+  // ------------------------------------------------------------
+  // ドラマ「続・最後から二番目の恋」ロケ地データ(2014年放送の続編)
+  // 前作(dramaSpots)とは別カテゴリとして、テイールの📺ピンで表示・個別に表示/非表示できるようにする
+  // ------------------------------------------------------------
+  const sequelDramaSpots = [
+    { id: 'sequel-enosui',         name: '新江ノ島水族館',              lat: 35.3100750,  lng: 139.4794388,  memo: '江の島エリアのロケ地。千明たちが訪れる水族館', image: 'https://enokama.jp/wp-content/uploads/2025/06/fantagyjf-1024x677.jpg' },
+    { id: 'sequel-bentenbashi',    name: '弁天橋',                      lat: 35.3044597,  lng: 139.4821935,  memo: '江の島の玄関口にかかる橋。ロケでも印象的に使われた' },
+    { id: 'sequel-manpukuji',      name: '満福寺',                      lat: 35.3077149,  lng: 139.4950194,  memo: '腰越・西鎌倉エリア。源義経ゆかりの寺', image: 'https://enokama.jp/wp-content/uploads/2022/10/満福寺外観.jpeg' },
+    { id: 'sequel-renbai',         name: '鎌倉市農協連即売所(レンバイ)', lat: 35.3171513,  lng: 139.5512057,  memo: '地元でも人気の朝市。買い物シーンで登場', image: 'https://enokama.jp/wp-content/uploads/2022/04/re_renbai3.jpg' },
+    { id: 'sequel-takaranoniwa',   name: '北鎌倉たからの庭',            lat: 35.33121394, lng: 139.54543165, memo: '古民家を活用したシェアアトリエ。庭でのシーンに使用' },
+    { id: 'sequel-garb-enoshima',  name: 'GARB江ノ島',                  lat: 35.308572,   lng: 139.482089,   memo: '江の島を望むカフェ&レストラン' },
+    { id: 'sequel-sakanoshita-alley', name: '坂ノ下の路地(長倉家・吉野家)', lat: 35.310500, lng: 139.532500, memo: '続編の主要舞台。吉野千明の家と長倉家がある住宅街の路地', image: 'https://enokama.jp/wp-content/uploads/2023/12/1600px-topスライド1-1-1536x871.jpg' },
+    { id: 'sequel-gokurakujizaka', name: '極楽寺坂切通し', lat: 35.3110, lng: 139.5305, memo: '鎌倉七切通しのひとつ。中井貴一と小泉今日子が出会う場面などで使われた歴史ある坂道' },
+    { id: 'sequel-yuigahama-park', name: '由比ヶ浜海浜公園', lat: 35.3105425, lng: 139.5436465, memo: '中井貴一と柴田理恵が野球の練習をする公園、キャラクター同士の出会いのシーン' },
+    { id: 'sequel-chikusen',       name: '竹扇',                        lat: 35.31912203, lng: 139.54863402, memo: '昭和13年創業の手打ちそば店。中井貴一と佐津川愛美が会った蕎麦屋' },
+    { id: 'sequel-hidefuku',       name: '秀福そば店',                  lat: 35.32714105, lng: 139.52319807, memo: '常盤にある地元で愛される老舗そば屋。中井貴一と長谷川京子がそば打ち体験' },
+  ];
+
+  // ------------------------------------------------------------
+  // おすすめ古民家カフェ(茶色の🏠ピンで表示)
+  //   address : 番地(Googleマップ検索リンクの精度を上げるために使用)
+  //   image   : 紹介用の写真URL(店の公式サイトや観光サイトから引用。存在しない場合はnull)
+  //   website : 公式サイト or 公式Instagram
+  // ------------------------------------------------------------
+  const oldHouseCafes = [
+    { id: 'cafe-mushinan',      name: '甘味処 無心庵',                     lat: 35.3137069,        lng: 139.54497153,      address: '鎌倉市由比ガ浜3-2-13',  memo: '築約100年。名物は「クリームあんみつ」、季節の草花が咲く庭が魅力',                    image: 'https://enokama.jp/wp-content/uploads/2021/11/mushinan2-1.png',                                             website: 'https://mushinan.chobi.net/' },
+    { id: 'cafe-yuigahama-st',  name: 'パンとエスプレッソと由比ガ浜商店', lat: 35.314996,         lng: 139.546011,        address: '鎌倉市由比ガ浜1-10-5',  memo: '築100年以上の元酒店。食パン「ムー」と焙煎コーヒーが自慢',                              image: 'https://enokama.jp/wp-content/uploads/2023/02/paness1.jpg',                                                  website: 'https://bread-espresso.jp/shop/yuigahama-st.html' },
+    { id: 'cafe-sacanosita',    name: 'サカノシタ',                       lat: 35.309308178878,   lng: 139.53390580079,   address: '鎌倉市坂ノ下21-15',     memo: '築100年。ドラマロケ地としても有名。「ピクニックパンケーキ」が名物',                    image: 'https://enokama.jp/wp-content/uploads/2023/12/1600px-topスライド1-1-1536x871.jpg',                            website: 'https://www.instagram.com/sacanosita_2115/' },
+    { id: 'cafe-plough',        name: 'plough',                           lat: 35.311002,         lng: 139.538354,        address: '鎌倉市長谷2-7-29',      memo: '築100年以上。看板メニューは「だしボウル」、竹林の庭園が印象的',                        image: 'https://kominnka-cafe-plough.com/wp-content/uploads/2025/10/slider_syusei1-scaled.webp',                    website: 'https://kominnka-cafe-plough.com/' },
+    { id: 'cafe-paso',          name: 'paso by 27 COFFEE ROASTERS',       lat: 35.30944844,       lng: 139.53381079,      address: '鎌倉市坂ノ下22-6',      memo: 'スペシャルティコーヒー専門店。縁側と畳席でくつろげる',                                image: 'https://enokama.jp/wp-content/uploads/2023/02/paso3.jpg',                                                    website: 'https://27coffee.jp/pages/paso' },
+    { id: 'cafe-with-kamakura', name: 'WITH KAMAKURA',                    lat: 35.311059,         lng: 139.533542,        address: '鎌倉市坂ノ下3-7',       memo: '築200年以上の合掌造り古民家。葉山牛ハンバーグなど「WITH御膳」が人気',                  image: null,                                                                                                          website: 'https://www.instagram.com/with_kamakura/' },
+    { id: 'cafe-kitahashi',     name: '鎌倉 北橋',                        lat: 35.313692878876,   lng: 139.53717907083,   address: '鎌倉市長谷1-11-32',     memo: '大正時代の建築(旧加賀谷邸)。手打ち蕎麦とコーヒーが名物。ドラマロケ地',                  image: 'https://kamakura-kitahashi.com/wp-content/uploads/2024/06/menu_soba-3.jpg',                                  website: 'https://kamakura-kitahashi.com/' },
+    { id: 'cafe-yukinoshita',   name: '古民家カフェ ユキノシタ',          lat: 35.32297867,       lng: 139.55577446,      address: '鎌倉市雪の下1-13-13',   memo: '築80年。ヴィーガンメニュー充実、「ユキノシタスパイスカレー」が人気',                    image: 'https://enokama.jp/wp-content/uploads/2024/04/1600pxTopスライド画像１-1536x871.jpg',                          website: 'https://www.instagram.com/yukinosita.kamakura/' },
+    { id: 'cafe-tsubame',       name: '燕カフェ',                         lat: 35.32115721,       lng: 139.55743901,      address: '鎌倉市小町3-2-27',      memo: '築90年超。骨董品が並ぶ店内。「薬膳カレー」が名物',                                    image: 'https://enokama.jp/wp-content/uploads/2022/02/tsubamecafe2.jpg',                                             website: 'https://www.instagram.com/tsubamecafe_kamakura/' },
+    { id: 'cafe-albicocca',     name: 'cafe＆foods albicocca',            lat: 35.327454598873,   lng: 139.55438076096,   address: '鎌倉市雪ノ下2-6-11',    memo: '築100年。オーナーシェフによるイタリアン。「とろ〜りチーズのオムバーグ」が人気',        image: 'https://enokama.jp/wp-content/uploads/2022/04/re_albicocca2.jpg',                                            website: 'https://albicocca-kamakura.com/' },
+    { id: 'cafe-egao',          name: 'Cafe&Restaurant EGAO',             lat: 35.31159518,       lng: 139.54611193,      address: '鎌倉市由比ガ浜2-21-15', memo: '築約50年。庭園を眺めながら食事。「自家製ベーコンステーキ」が人気',                      image: 'https://www.cafe-restaurant-egao.jp/wp-content/uploads/image1.jpg',                                          website: 'https://www.cafe-restaurant-egao.jp/' },
+    { id: 'cafe-cyan-kamakura', name: 'CYAN KAMAKURA',                    lat: 35.3241,           lng: 139.5387,          address: '鎌倉市佐助2-23-14',     memo: '築50年。佐助稲荷神社の入口近くの隠れ家。「鎌倉野菜カレー」が名物',                      image: 'https://enokama.jp/wp-content/uploads/2024/12/cyankamakura2.jpg',                                            website: 'https://www.instagram.com/cyan_kamakura/' },
+  ];
+
+  // ------------------------------------------------------------
+  // デートにおすすめのお洒落なお店・スポット(紫の💕ピンで表示)
+  // ------------------------------------------------------------
+  const dateSpots = [
+    { id: 'date-gardenhouse',   name: 'GARDEN HOUSE KAMAKURA',   lat: 35.319568,   lng: 139.547862,  address: '鎌倉市御成町15-46',    memo: '緑あふれる庭園レストラン。鎌倉ハム富岡商会とのコラボ料理やクラフトビールが楽しめる、デート・記念日の定番',      image: 'https://enokama.jp/wp-content/uploads/2022/04/re_gardenhouse1.jpg',                            website: 'https://gardenhouse-kamakura.jp/' },
+    { id: 'date-bills',         name: 'bills 七里ヶ浜店',        lat: 35.3055305, lng: 139.5101410, address: '鎌倉市七里ガ浜1-1-1',  memo: '"世界一の朝食"で有名なシドニー発カフェ。2階テラス席から相模湾を一望しながらリコッタパンケーキを',            image: 'https://enokama.jp/wp-content/uploads/2025/03/4_鎌倉-カフェ_bills-七里ヶ浜.jpg',                  website: 'https://bills-jp.net/shop/shonan/' },
+    { id: 'date-pacific',       name: 'Pacific DRIVE-IN',        lat: 35.30442821, lng: 139.51357374, address: '鎌倉市七里ガ浜東2-1-12', memo: '海を見ながらくつろげるハワイアンダイナー。テラス席から江の島・富士山を望むサンセットタイムが人気',            image: 'https://enokama.jp/wp-content/uploads/2025/08/DSCF8921-1536x1024.jpg',                          website: 'http://pacificdrivein.com/' },
+    { id: 'date-sangosho',      name: '珊瑚礁 モアナマカイ店',    lat: 35.30574051, lng: 139.50892899, address: '鎌倉市七里が浜1-3-22',  memo: '鎌倉カレーの代名詞的存在。夕暮れ時にはロマンチックな夕日を眺めながら食事ができる',                          image: 'https://enokama.jp/wp-content/uploads/2022/04/re_EKN2019冬珊瑚礁外観1.jpg',                        website: 'https://sangosho.net/moana/' },
+    { id: 'date-dropin',        name: 'DROP IN',                 lat: 35.305152,  lng: 139.551179,  address: '鎌倉市材木座6-4-24',    memo: '材木座海岸すぐの海カフェ。開放的なテラス席で産地直送フルーツのデザートやランチを',                          image: null,                                                                                             website: 'https://plust-drop.com/' },
+    { id: 'date-namimachi',     name: 'なみまちベーグル',        lat: 35.30965897, lng: 139.53375663, address: '鎌倉市坂ノ下19-12',    memo: '海まで徒歩30秒、築100年超の古民家で作る手作りベーグル。行列のできる隠れ家的な一軒',                        image: 'https://enokama.jp/wp-content/uploads/2021/11/namimachibagel8-1536x1024.jpg',                    website: 'https://namimachi.base.shop/about' },
+    { id: 'date-hotcake',       name: '鎌倉ほっとけーき',        lat: 35.32264097, lng: 139.55316972, address: '鎌倉市雪ノ下1-6-6',     memo: '銅板で1枚ずつ丁寧に焼き上げる、ふわふわ食感のホットケーキ専門店',                                          image: null,                                                                                             website: 'https://www.instagram.com/hotcake_kamakura/' },
+    { id: 'date-shichirigahama', name: '七里ヶ浜海岸(夕日スポット)', lat: 35.3040,   lng: 139.5140,    address: '鎌倉市七里ガ浜',        memo: '日本の渚百選のひとつ。江の島越しに沈む夕日が見えるロマンチックな絶景スポット',                              image: 'https://enokama.jp/wp-content/uploads/2022/04/21autumn_leaflet_shichirigahama-1536x1024.jpg',   website: null },
+    { id: 'date-joujuin',       name: '成就院',                  lat: 35.3090783, lng: 139.5312626, address: '鎌倉市極楽寺1-1-5',    memo: '良縁成就の寺として知られる。108段の石段の参道から由比ヶ浜を一望できる眺望スポット',                        image: 'https://enokama.jp/wp-content/uploads/2021/11/22haru_enokama_leaflet_jojuin-1536x1024.jpg',     website: null },
+    { id: 'date-raitei',        name: '檑亭',                    lat: 35.31647776, lng: 139.51520155, address: '鎌倉市鎌倉山3-1-1', memo: '1万5千坪の廻遊式庭園と富士山・相模湾の絶景。国登録有形文化財の邸宅で味わう会席・そば',                    image: 'https://oniwa.garden/wp-content/uploads/2025/05/01-2-1200x900.jpeg', website: null },
+    { id: 'date-amalfi',        name: 'アマルフィイ デラセーラ', lat: 35.306395, lng: 139.507454, address: '鎌倉市七里ガ浜1-5-10', memo: '七里ヶ浜の高台に立つイタリアン。テラスから相模湾・江の島・富士山を一望できる記念日の名店',              image: 'https://enokama.jp/wp-content/uploads/2021/11/amalfidellasera.jpg', website: 'https://amalfi-dellasera.com/' },
+    { id: 'date-pondichery',    name: 'Pondichery',              lat: 35.322864,  lng: 139.551578,  address: '鎌倉市雪ノ下1-2-3',    memo: 'フレンチ×南インドスパイスの創作料理店。落ち着いた大人の雰囲気でディナーデートに',                          image: null, website: null },
+    { id: 'date-hachinoki',     name: '鉢の木 新館',              lat: 35.33485926, lng: 139.54759924, address: '鎌倉市山ノ内350',     memo: '1964年創業、庭園とせせらぎに包まれた会席料理店。個室も充実し記念日利用に人気',                            image: 'https://enokama.jp/wp-content/uploads/2022/05/鉢の木-新館.jpeg', website: 'https://www.hachinoki.co.jp/' },
+    { id: 'date-pergola',       name: 'ペルゴーラ',              lat: 35.3053036, lng: 139.5319086, address: '鎌倉市坂ノ下33-6 鎌倉パークホテル1F', memo: '海を望むフレンチレストラン。ワインペアリングと共に特別なディナーを',                    image: null, website: 'https://www.kamakuraparkhotel.co.jp/restaurant/pergola.shtml' },
+    { id: 'date-cocomo',        name: 'Ocean Harvest Cocomo',    lat: 35.310356,  lng: 139.538285,  address: '鎌倉市長谷2-8-8 鎌倉コートハウス2F', memo: '由比ヶ浜を一望できるイタリアン。新鮮な牡蠣や魚介料理が評判',                            image: 'https://enokama.jp/wp-content/uploads/2022/01/cocomo_gaikan-1536x1025.jpg', website: 'https://www.kamakura-cocomo.com/' },
+    { id: 'date-splice',        name: 'Splice Kamakura',         lat: 35.3184716, lng: 139.5484840, address: '鎌倉市御成町10-15',    memo: 'タコス×ナチュラルワインの隠れ家。御成町の路地裏にある大人のデートスポット',                              image: null, website: 'https://splicekamakura.com/' },
+  ];
+
+  // ------------------------------------------------------------
+  // 鎌倉通が知るこだわりのお店(紺色の🏮ピンで表示)
+  // 観光客向けガイドにはあまり出てこない、大町・材木座エリアを中心にした地元で評判の店
+  // ------------------------------------------------------------
+  const insiderSpots = [
+    { id: 'insider-2ndfloor',    name: '2ND FLOOR by A&S',       lat: 35.3043768, lng: 139.5535309, address: '鎌倉市材木座6-3-29 2F', memo: 'イタリアン出身シェフが鎌倉野菜とスパイスを組み合わせる、旬の食材と料理の店。材木座海岸を望む2階のダイニングでナチュラルワインも',   image: null, website: 'https://arts-science.com/shop/2nd-floor/' },
+    { id: 'insider-hcafe',       name: '+h café kamakura',       lat: 35.3122029, lng: 139.5596853, address: '鎌倉市大町4-8-29',     memo: '妙法寺裏の森にたたずむ隠れ家カフェ。建築家の店主とパリ仕込みのシェフによるフレンチ×オリエンタルの創作ランチ',                        image: 'https://enokama.jp/wp-content/uploads/2024/09/1600px-top横長内観-1536x866.jpg', website: 'https://www.lestyleh.com/kamakura' },
+    { id: 'insider-millcoffee',  name: 'ミルコーヒー&スタンド',  lat: 35.30597379, lng: 139.55150452, address: '鎌倉市材木座5-14-18', memo: '朝8時から開く古民家カフェ。米粉を使った自家製スイーツと丁寧に淹れるコーヒーが地元で評判',                                            image: 'https://enokama.jp/wp-content/uploads/2024/12/millcoffee005.jpg', website: 'https://www.instagram.com/millcoffeestand/' },
+    { id: 'insider-tsukitomatsu', name: 'からすみ蕎麦 月と松',   lat: 35.307908,  lng: 139.549011,  address: '鎌倉市材木座5-10-50', memo: '昭和6年築の日本家屋と庭園で味わう、幻のからすみをたっぷりのせた蕎麦',                                                            image: 'https://enokama.jp/wp-content/uploads/2024/04/tsukitomatsu1-1024x683.jpg', website: 'https://whaves.co.jp/tsukitomatsu/' },
+    { id: 'insider-acote',       name: 'À côté zaimokuza',       lat: 35.30789025, lng: 139.55133127, address: '鎌倉市材木座3-13-17', memo: '知る人ぞ知るフレンチビストロ&パティスリー。季節限定パフェと焼き菓子が評判',                                                     image: 'https://enokama.jp/wp-content/uploads/2024/07/2024秋_昼_アコテ材木座_軽量-1024x683.jpg', website: 'https://zaimokuza-shotenkai.com/shop/acote/' },
+    { id: 'insider-kirara',      name: '茶房 雲母(きらら)',      lat: 35.32186339, lng: 139.5466162, address: '鎌倉市御成町16-7',    memo: '注文を受けてから茹でる白玉が名物。行列必至の人気甘味処',                                                                          image: null, website: null },
+    { id: 'insider-parlor-yamada', name: 'パーラー山田(旧Rich Life)', lat: 35.3046, lng: 139.5533, address: '鎌倉市材木座6-4-4',  memo: '和田塚駅すぐの隠れ家イタリアン&カフェ。自家製レモンスカッシュと落ち着いた空間が魅力',                                              image: null, website: 'https://www.instagram.com/parlor_yamada/' },
+    { id: 'insider-dolcefarniente', name: 'Dolce far niente',    lat: 35.3215, lng: 139.5510, address: '鎌倉市雪ノ下1-5-34 2F', memo: '鎌倉野菜を使ったイタリアンバール。1日15~20食限定の鎌倉野菜ランチプレートが評判', image: 'https://enokama.jp/wp-content/uploads/2021/11/dolcefarniente1.jpg', website: null },
+    { id: 'insider-kakan',       name: 'かかん 鎌倉本店',        lat: 35.320067038071, lng: 139.54919157973, address: '鎌倉市御成町13-12', memo: '地元で愛される町中華の名店。麻婆豆腐が看板メニューで行列必至', image: 'https://enokama.jp/wp-content/uploads/2022/09/zitu_TK2_7084_CMYK_1005web.jpg', website: null },
+    { id: 'insider-plusouple',   name: 'PLUSOUPLE 鎌倉店',       lat: 35.3198, lng: 139.5487, address: '鎌倉市御成町14-1 御成ビル1F', memo: 'Pascoが手がけるパンとスープの専門店。地元で評判の朝食セットも', image: null, website: 'https://plusouple.jp/' },
+  ];
+
+  // ------------------------------------------------------------
+  // 鎌倉といえば外せない王道のお店(赤茶色の🏆ピンで表示)
+  // 明治・昭和創業の老舗が中心。定番のお土産・名物を扱う店
+  // ------------------------------------------------------------
+  const classicSpots = [
+    { id: 'classic-toshimaya',   name: '豊島屋 本店',            lat: 35.3204607,  lng: 139.55256171, address: '鎌倉市小町2-11-19', memo: '明治28年創業。鎌倉銘菓「鳩サブレー」の元祖。本店限定の鳩グッズも', image: 'https://enokama.jp/wp-content/uploads/2021/11/toshimaya1.jpg', website: 'https://www.hato.co.jp/' },
+    { id: 'classic-kamakuragoro', name: '鎌倉五郎本店',           lat: 35.32053709, lng: 139.55191983, address: '鎌倉市小町2-9-2',   memo: '月うさぎのデザインが目印の「鎌倉半月」。ゴーフレット生地と軽やかなクリームが人気', image: 'https://www.kamakuragoro.co.jp/img/photo_main_otsukimi2609.png', website: 'https://www.kamakuragoro.co.jp/' },
+    { id: 'classic-kosuzu',      name: '段葛 こ寿々',            lat: 35.32152749, lng: 139.55399324, address: '鎌倉市小町2-13-4',  memo: '本わらび粉を使った銅鍋練り上げのわらび餅と手打ちそばの名店', image: null, website: null },
+    { id: 'classic-beniya',      name: '鎌倉紅谷 八幡宮前本店',  lat: 35.3232265,  lng: 139.5548626,  address: '鎌倉市雪ノ下1-12-4', memo: '1954年創業。自家製キャラメルとクルミの「クルミッ子」が看板商品', image: null, website: 'https://beniya-ajisai.co.jp/' },
+    { id: 'classic-witch',       name: '鎌倉ウィッチ',           lat: 35.3184716,  lng: 139.5484840,  address: '鎌倉市御成町8-1',   memo: 'ラムレーズンとバタークリームをサブレでサンドした「鎌倉ウィッチ」が名物', image: 'https://enokama.jp/wp-content/uploads/2025/08/⑥店内写真.jpg', website: null },
+    { id: 'classic-mameya',      name: '鎌倉まめや 小町通り店',  lat: 35.3223538,  lng: 139.55264977, address: '鎌倉市雪ノ下1-5-38', memo: '1952年創業の豆菓子専門店。70種類以上の豆から選べる食べ比べが人気', image: null, website: null },
+    { id: 'classic-inoue',       name: '井上蒲鉾店 鎌倉駅前店',  lat: 35.3193,     lng: 139.5504,      address: '鎌倉市小町1-4-4',   memo: '1931年創業。無添加にこだわった「梅花はんぺん」が名物のかまぼこ店', image: 'https://enokama.jp/wp-content/uploads/2022/04/inouekamaboko_kamakuraekimae2-1536x1092.jpg', website: 'https://www.inouekamaboko.co.jp/' },
+  ];
+
+  // ------------------------------------------------------------
+  // 訪問記録(ブラウザのlocalStorageに保存。端末・ブラウザごとに保持される)
+  // ------------------------------------------------------------
+  const VISITED_KEY = 'kamakuraMapVisited';
+  let visited = {};
+  try {
+    visited = JSON.parse(localStorage.getItem(VISITED_KEY) || '{}');
+  } catch (e) {
+    visited = {};
+  }
+
+  function saveVisited() {
+    try {
+      localStorage.setItem(VISITED_KEY, JSON.stringify(visited));
+    } catch (e) {
+      // localStorageが使えない環境(プライベートモード等)では保存をあきらめる
+    }
+  }
+
+  function isVisited(id) {
+    return !!visited[id];
+  }
+
+  // ------------------------------------------------------------
+  // お気に入り(★)。訪問済みとは独立した「行きたい/気になる」リスト
+  // ------------------------------------------------------------
+  const FAVORITES_KEY = 'kamakuraMapFavorites';
+  let favorites = {};
+  try {
+    favorites = JSON.parse(localStorage.getItem(FAVORITES_KEY) || '{}');
+  } catch (e) {
+    favorites = {};
+  }
+
+  function saveFavorites() {
+    try {
+      localStorage.setItem(FAVORITES_KEY, JSON.stringify(favorites));
+    } catch (e) {
+      // localStorageが使えない環境では保存をあきらめる
+    }
+  }
+
+  function isFavorite(id) {
+    return !!favorites[id];
+  }
+
+  // id -> ✅バッジのLeafletマーカー
+  const badgeMarkers = {};
+  // id -> ⭐バッジのLeafletマーカー
+  const favoriteBadgeMarkers = {};
+  // id -> そのスポットが属するレイヤーグループのキー(カテゴリ表示/非表示の切り替えに使用)
+  const idToGroupKey = {};
+  // id -> 本体マーカー(「未訪問のみ表示」フィルターで個別に表示/非表示するために保持)
+  const markersById = {};
+  // カテゴリキー -> 凡例のチェックボックスDOM要素(サイドバーからジャンプする際にONへ同期するため)
+  const categoryCheckboxes = {};
+  // 「未訪問のみ表示」「お気に入りのみ表示」がONかどうか
+  let showOnlyUnvisited = false;
+  let showOnlyFavorites = false;
+
+  // 訪問済み/お気に入りフィルターに応じて、カテゴリ表示状態とは独立してマーカーを表示/非表示する
+  function updateVisibilityFilters() {
+    Object.keys(markersById).forEach(id => {
+      const group = layerGroups[idToGroupKey[id]];
+      if (!group) return;
+      const marker = markersById[id];
+      const badge = badgeMarkers[id];
+      const favBadge = favoriteBadgeMarkers[id];
+      const hide = (showOnlyUnvisited && isVisited(id)) || (showOnlyFavorites && !isFavorite(id));
+      if (hide) {
+        group.layer.removeLayer(marker);
+        if (badge) group.layer.removeLayer(badge);
+        if (favBadge) group.layer.removeLayer(favBadge);
+      } else {
+        if (!group.layer.hasLayer(marker)) group.layer.addLayer(marker);
+        if (badge && !group.layer.hasLayer(badge)) group.layer.addLayer(badge);
+        if (favBadge && !group.layer.hasLayer(favBadge)) group.layer.addLayer(favBadge);
+      }
+    });
+  }
+
+  const badgeIcon = L.divIcon({
+    className: '',
+    html: '<div class="visited-badge">✓</div>',
+    iconSize: [16, 16],
+    // 元のマーカーの右上に少しズラして重ねる
+    iconAnchor: [-6, 22],
+  });
+
+  const favoriteBadgeIcon = L.divIcon({
+    className: '',
+    html: '<div class="favorite-badge">★</div>',
+    iconSize: [16, 16],
+    // 元のマーカーの左上に少しズラして重ねる(✅バッジと反対側)
+    iconAnchor: [22, 22],
+  });
+
+  function updateBadge(id, latlng) {
+    const shouldShow = isVisited(id);
+    const existing = badgeMarkers[id];
+    const group = layerGroups[idToGroupKey[id]];
+    if (shouldShow && !existing && group) {
+      badgeMarkers[id] = L.marker(latlng, { icon: badgeIcon, interactive: false, zIndexOffset: 1000 }).addTo(group.layer);
+    } else if (!shouldShow && existing) {
+      existing.remove();
+      delete badgeMarkers[id];
+    }
+  }
+
+  function updateFavoriteBadge(id, latlng) {
+    const shouldShow = isFavorite(id);
+    const existing = favoriteBadgeMarkers[id];
+    const group = layerGroups[idToGroupKey[id]];
+    if (shouldShow && !existing && group) {
+      favoriteBadgeMarkers[id] = L.marker(latlng, { icon: favoriteBadgeIcon, interactive: false, zIndexOffset: 1000 }).addTo(group.layer);
+    } else if (!shouldShow && existing) {
+      existing.remove();
+      delete favoriteBadgeMarkers[id];
+    }
+  }
+
+  function updateLegendCount() {
+    const total = spots.length + dramaSpots.length + sequelDramaSpots.length + oldHouseCafes.length + dateSpots.length + insiderSpots.length + classicSpots.length;
+    const visitedCount = Object.keys(visited).filter(id => visited[id]).length;
+    const el = document.getElementById('visited-count-text');
+    if (el) el.textContent = `訪問済み: ${visitedCount} / ${total}`;
+    const fill = document.getElementById('overall-progress-fill');
+    if (fill) fill.style.width = `${total ? (visitedCount / total * 100) : 0}%`;
+  }
+
+  // ------------------------------------------------------------
+  // 訪問記録(日付・メモ・写真)まわりのヘルパー
+  // ------------------------------------------------------------
+  // 編集フォームを表示中のID一覧(訪問済みでも「編集」を押すとここに入る)
+  const editingIds = new Set();
+  // 保存前(フォーム入力中)の写真データURL。id => dataURL、削除時は空文字列
+  const pendingPhotos = {};
+
+  function todayStr() {
+    const d = new Date();
+    const pad = n => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  }
+
+  function escapeHtml(str) {
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  // 写真ファイルを読み込み、長辺500pxに縮小してJPEGデータURLとして返す(localStorage容量対策)
+  function readAndCompressImage(file, callback) {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const maxSide = 500;
+        const scale = Math.min(1, maxSide / Math.max(img.width, img.height));
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.round(img.width * scale);
+        canvas.height = Math.round(img.height * scale);
+        canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+        callback(canvas.toDataURL('image/jpeg', 0.6));
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  // ポップアップ内の「訪問記録」欄(フォーム or 記録カード)のHTMLを組み立てる
+  function visitSectionHtml(id) {
+    const record = visited[id];
+    const isEditing = editingIds.has(id);
+
+    if (record && !isEditing) {
+      // ---- 記録カード表示 ----
+      const date = (record && record.date) || '';
+      const memo = (record && record.memo) || '';
+      const photo = (record && record.photo) || '';
+      return `
+        <div class="visit-record">
+          <div class="visit-record-title">✅ 訪問済み <span class="visit-record-date">${escapeHtml(date)}</span></div>
+          ${memo ? `<div class="visit-record-memo">${escapeHtml(memo)}</div>` : ''}
+          ${photo ? `<img class="visit-record-photo" src="${photo}" alt="訪問時の写真">` : ''}
+          <div class="popup-links">
+            <button class="visit-edit-btn" data-id="${id}" type="button">✏️ 編集</button>
+            <button class="visit-delete-btn" data-id="${id}" type="button">🗑 削除</button>
+          </div>
+        </div>
+      `;
+    }
+
+    // ---- 入力フォーム表示(新規 or 編集中) ----
+    const existing = record || {};
+    const dateVal = existing.date || todayStr();
+    const memoVal = existing.memo || '';
+    const hasPendingChange = Object.prototype.hasOwnProperty.call(pendingPhotos, id);
+    const photoVal = hasPendingChange ? pendingPhotos[id] : (existing.photo || '');
+    return `
+      <div class="visit-form">
+        <label class="visit-field-label">訪問日
+          <input type="date" class="visit-date-input" value="${dateVal}">
+        </label>
+        <textarea class="visit-memo-input" placeholder="ひとことメモ(任意)">${escapeHtml(memoVal)}</textarea>
+        <label class="photo-picker-label">
+          📷 写真を選ぶ(任意)
+          <input type="file" accept="image/*" class="visit-photo-input" data-id="${id}" style="display:none;">
+        </label>
+        <div class="photo-preview">${photoVal ? `<img src="${photoVal}" alt="preview"><button class="photo-remove-btn" data-id="${id}" type="button">✕ 写真を削除</button>` : ''}</div>
+        <button class="visit-submit-btn" data-id="${id}" type="button">✅ 訪問済みとして記録</button>
+        ${record ? `<button class="visit-cancel-btn" data-id="${id}" type="button">キャンセル</button>` : ''}
+      </div>
+    `;
+  }
+
+  // ------------------------------------------------------------
+  // 地図の初期化(中心は鎌倉駅付近)
+  // ------------------------------------------------------------
+  const kamakuraStation = [35.3189, 139.5500];
+  const map = L.map('map').setView(kamakuraStation, 14);
+
+  // ------------------------------------------------------------
+  // 地図タイルの見た目切り替え(標準 / 淡色 / 航空写真)
+  // ------------------------------------------------------------
+  const standardTiles = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+  }).addTo(map);
+
+  const paleTiles = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+    maxZoom: 19,
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+  });
+
+  const satelliteTiles = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+    maxZoom: 19,
+    attribution: 'Tiles &copy; Esri &mdash; Source: Esri, Maxar, Earthstar Geographics'
+  });
+
+  L.control.layers({
+    '標準地図': standardTiles,
+    '淡色地図': paleTiles,
+    '航空写真': satelliteTiles,
+  }, null, { position: 'bottomleft', collapsed: true }).addTo(map);
+
+  // ------------------------------------------------------------
+  // 現在地表示ボタン
+  // ------------------------------------------------------------
+  const locateControl = L.control({ position: 'topleft' });
+  locateControl.onAdd = function () {
+    const btn = L.DomUtil.create('div', 'locate-btn');
+    btn.textContent = '📍 現在地';
+    L.DomEvent.disableClickPropagation(btn);
+    btn.addEventListener('click', () => {
+      map.locate({ setView: true, maxZoom: 17, enableHighAccuracy: true });
+    });
+    return btn;
+  };
+  locateControl.addTo(map);
+
+  const userLocationIcon = L.divIcon({
+    className: '',
+    html: '<div class="user-location-dot"></div>',
+    iconSize: [16, 16],
+    iconAnchor: [8, 8],
+  });
+  let userLocationMarker = null;
+  let userAccuracyCircle = null;
+
+  map.on('locationfound', (e) => {
+    if (userLocationMarker) userLocationMarker.remove();
+    if (userAccuracyCircle) userAccuracyCircle.remove();
+    userLocationMarker = L.marker(e.latlng, { icon: userLocationIcon, zIndexOffset: 3000 })
+      .addTo(map)
+      .bindPopup('現在地(だいたいの位置)');
+    userAccuracyCircle = L.circle(e.latlng, {
+      radius: e.accuracy / 2,
+      color: '#4285F4',
+      fillColor: '#4285F4',
+      fillOpacity: 0.15,
+      weight: 1,
+    }).addTo(map);
+  });
+
+  map.on('locationerror', (e) => {
+    alert('現在地を取得できませんでした。ブラウザの位置情報の利用を許可してください。\n(' + e.message + ')');
+  });
+
+  // ------------------------------------------------------------
+  // カテゴリごとのレイヤーグループ(凡例のチェックボックスで表示/非表示を切り替える単位)
+  // マーカーが多いエリアではクラスター(まとまった円)表示になり見やすくなる
+  // key -> { label, swatchHtml, layer }
+  // ------------------------------------------------------------
+  const layerGroups = {};
+
+  function registerGroup(key, label, swatchHtml) {
+    const layer = L.markerClusterGroup({
+      showCoverageOnHover: false,
+      spiderfyOnMaxZoom: true,
+      maxClusterRadius: 45,
+    });
+    map.addLayer(layer);
+    layerGroups[key] = { label, swatchHtml, layer };
+    return layer;
+  }
+
+  Object.keys(categoryColors).forEach(cat => {
+    registerGroup(`spot-${cat}`, cat, `<span class="dot" style="background:${categoryColors[cat]};"></span>`);
+  });
+  registerGroup('drama', '最後から二番目の恋 ロケ地', `<span class="pin"></span>`);
+  registerGroup('drama2', '続・最後から二番目の恋 ロケ地', `<span class="pin-drama2"></span>`);
+  registerGroup('cafe', 'おすすめ古民家カフェ', `<span class="pin-cafe"></span>`);
+  registerGroup('date', 'デートスポット', `<span class="pin-date"></span>`);
+  registerGroup('insider', '鎌倉通のこだわり店', `<span class="pin-insider"></span>`);
+  registerGroup('classic', '王道のお店', `<span class="pin-classic"></span>`);
+
+  // ------------------------------------------------------------
+  // スポットをマーカーとして地図に追加
+  // ------------------------------------------------------------
+  spots.forEach(spot => {
+    const color = categoryColors[spot.category] || '#7f8c8d';
+    const latlng = [spot.lat, spot.lng];
+    const groupKey = `spot-${spot.category}`;
+    idToGroupKey[spot.id] = groupKey;
+
+    const spotIcon = L.divIcon({
+      className: '',
+      html: `<div class="spot-dot" style="background:${color};"></div>`,
+      iconSize: [16, 16],
+      iconAnchor: [8, 8],
+      popupAnchor: [0, -8],
+    });
+    const marker = L.marker(latlng, { icon: spotIcon }).addTo(layerGroups[groupKey].layer);
+
+    const popupHtml = () => `
+      <div>
+        ${spot.image ? `<img class="popup-image" src="${spot.image}" alt="${spot.name}">` : ''}
+        <span class="popup-category" style="background:${color};">${spot.category}</span>
+        <button class="favorite-toggle-btn" data-id="${spot.id}" type="button">${isFavorite(spot.id) ? '⭐' : '☆'}</button>
+        <div><strong>${spot.name}</strong></div>
+        ${spot.memo ? `<div class="popup-memo">${spot.memo}</div>` : ''}
+        <div class="visit-section" data-id="${spot.id}">${visitSectionHtml(spot.id)}</div>
+      </div>
+    `;
+    marker.bindPopup(popupHtml());
+    marker.on('popupopen', () => marker.setPopupContent(popupHtml()));
+
+    markersById[spot.id] = marker;
+    updateBadge(spot.id, latlng);
+    updateFavoriteBadge(spot.id, latlng);
+  });
+
+  // ------------------------------------------------------------
+  // ドラマロケ地をピンク色の🎬ピンとして地図に追加
+  // ------------------------------------------------------------
+  const dramaIcon = L.divIcon({
+    className: '',
+    html: '<div class="drama-pin"><span>🎬</span></div>',
+    iconSize: [26, 26],
+    iconAnchor: [13, 26],
+    popupAnchor: [0, -24],
+  });
+
+  dramaSpots.forEach(spot => {
+    const latlng = [spot.lat, spot.lng];
+    idToGroupKey[spot.id] = 'drama';
+    const marker = L.marker(latlng, { icon: dramaIcon }).addTo(layerGroups.drama.layer);
+
+    const popupHtml = () => `
+      <div>
+        ${spot.image ? `<img class="popup-image" src="${spot.image}" alt="${spot.name}">` : ''}
+        <span class="popup-category" style="background:#d6336c;">最後から二番目の恋</span>
+        <button class="favorite-toggle-btn" data-id="${spot.id}" type="button">${isFavorite(spot.id) ? '⭐' : '☆'}</button>
+        <div><strong>${spot.name}</strong></div>
+        ${spot.memo ? `<div class="popup-memo">${spot.memo}</div>` : ''}
+        <div class="visit-section" data-id="${spot.id}">${visitSectionHtml(spot.id)}</div>
+      </div>
+    `;
+    marker.bindPopup(popupHtml());
+    marker.on('popupopen', () => marker.setPopupContent(popupHtml()));
+
+    markersById[spot.id] = marker;
+    updateBadge(spot.id, latlng);
+    updateFavoriteBadge(spot.id, latlng);
+  });
+
+  // ------------------------------------------------------------
+  // ドラマ「続・最後から二番目の恋」ロケ地をティール色の📺ピンとして地図に追加
+  // ------------------------------------------------------------
+  const drama2Icon = L.divIcon({
+    className: '',
+    html: '<div class="drama2-pin"><span>📺</span></div>',
+    iconSize: [26, 26],
+    iconAnchor: [13, 26],
+    popupAnchor: [0, -24],
+  });
+
+  sequelDramaSpots.forEach(spot => {
+    const latlng = [spot.lat, spot.lng];
+    idToGroupKey[spot.id] = 'drama2';
+    const marker = L.marker(latlng, { icon: drama2Icon }).addTo(layerGroups.drama2.layer);
+
+    const popupHtml = () => `
+      <div>
+        ${spot.image ? `<img class="popup-image" src="${spot.image}" alt="${spot.name}">` : ''}
+        <span class="popup-category" style="background:#16a085;">続・最後から二番目の恋</span>
+        <button class="favorite-toggle-btn" data-id="${spot.id}" type="button">${isFavorite(spot.id) ? '⭐' : '☆'}</button>
+        <div><strong>${spot.name}</strong></div>
+        ${spot.memo ? `<div class="popup-memo">${spot.memo}</div>` : ''}
+        <div class="visit-section" data-id="${spot.id}">${visitSectionHtml(spot.id)}</div>
+      </div>
+    `;
+    marker.bindPopup(popupHtml());
+    marker.on('popupopen', () => marker.setPopupContent(popupHtml()));
+
+    markersById[spot.id] = marker;
+    updateBadge(spot.id, latlng);
+    updateFavoriteBadge(spot.id, latlng);
+  });
+
+  // ------------------------------------------------------------
+  // おすすめ古民家カフェを茶色の🏠ピンとして地図に追加
+  // ------------------------------------------------------------
+  const cafeIcon = L.divIcon({
+    className: '',
+    html: '<div class="cafe-pin"><span>🏠</span></div>',
+    iconSize: [26, 26],
+    iconAnchor: [13, 26],
+    popupAnchor: [0, -24],
+  });
+
+  oldHouseCafes.forEach(spot => {
+    const latlng = [spot.lat, spot.lng];
+    idToGroupKey[spot.id] = 'cafe';
+    const marker = L.marker(latlng, { icon: cafeIcon }).addTo(layerGroups.cafe.layer);
+
+    // Googleマップの検索リンク(店名+住所で検索するので、正式なPlace IDがなくても店の情報ページにたどり着ける)
+    const mapsQuery = encodeURIComponent(`${spot.name} ${spot.address}`);
+    const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${mapsQuery}`;
+
+    const popupHtml = () => `
+      <div>
+        ${spot.image ? `<img class="popup-image" src="${spot.image}" alt="${spot.name}">` : ''}
+        <span class="popup-category" style="background:#8b5e34;">古民家カフェ</span>
+        <button class="favorite-toggle-btn" data-id="${spot.id}" type="button">${isFavorite(spot.id) ? '⭐' : '☆'}</button>
+        <div><strong>${spot.name}</strong></div>
+        ${spot.memo ? `<div class="popup-memo">${spot.memo}</div>` : ''}
+        ${spot.address ? `<div class="popup-address">${spot.address}</div>` : ''}
+        <div class="popup-links">
+          ${spot.website ? `<a href="${spot.website}" target="_blank" rel="noopener">公式サイト</a>` : ''}
+          <a class="maps-link" href="${mapsUrl}" target="_blank" rel="noopener">Googleマップ</a>
+        </div>
+        <div class="visit-section" data-id="${spot.id}">${visitSectionHtml(spot.id)}</div>
+      </div>
+    `;
+    marker.bindPopup(popupHtml());
+    marker.on('popupopen', () => marker.setPopupContent(popupHtml()));
+
+    markersById[spot.id] = marker;
+    updateBadge(spot.id, latlng);
+    updateFavoriteBadge(spot.id, latlng);
+  });
+
+  // ------------------------------------------------------------
+  // デートにおすすめのお洒落なお店・スポットを紫の💕ピンとして地図に追加
+  // ------------------------------------------------------------
+  const dateIcon = L.divIcon({
+    className: '',
+    html: '<div class="date-pin"><span>💕</span></div>',
+    iconSize: [26, 26],
+    iconAnchor: [13, 26],
+    popupAnchor: [0, -24],
+  });
+
+  dateSpots.forEach(spot => {
+    const latlng = [spot.lat, spot.lng];
+    idToGroupKey[spot.id] = 'date';
+    const marker = L.marker(latlng, { icon: dateIcon }).addTo(layerGroups.date.layer);
+
+    const mapsQuery = encodeURIComponent(`${spot.name} ${spot.address}`);
+    const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${mapsQuery}`;
+
+    const popupHtml = () => `
+      <div>
+        ${spot.image ? `<img class="popup-image" src="${spot.image}" alt="${spot.name}">` : ''}
+        <span class="popup-category" style="background:#8e44ad;">デートスポット</span>
+        <button class="favorite-toggle-btn" data-id="${spot.id}" type="button">${isFavorite(spot.id) ? '⭐' : '☆'}</button>
+        <div><strong>${spot.name}</strong></div>
+        ${spot.memo ? `<div class="popup-memo">${spot.memo}</div>` : ''}
+        ${spot.address ? `<div class="popup-address">${spot.address}</div>` : ''}
+        <div class="popup-links">
+          ${spot.website ? `<a href="${spot.website}" target="_blank" rel="noopener">公式サイト</a>` : ''}
+          <a class="maps-link" href="${mapsUrl}" target="_blank" rel="noopener">Googleマップ</a>
+        </div>
+        <div class="visit-section" data-id="${spot.id}">${visitSectionHtml(spot.id)}</div>
+      </div>
+    `;
+    marker.bindPopup(popupHtml());
+    marker.on('popupopen', () => marker.setPopupContent(popupHtml()));
+
+    markersById[spot.id] = marker;
+    updateBadge(spot.id, latlng);
+    updateFavoriteBadge(spot.id, latlng);
+  });
+
+  // ------------------------------------------------------------
+  // 鎌倉通が知るこだわりのお店を紺色の🏮ピンとして地図に追加
+  // ------------------------------------------------------------
+  const insiderIcon = L.divIcon({
+    className: '',
+    html: '<div class="insider-pin"><span>🏮</span></div>',
+    iconSize: [26, 26],
+    iconAnchor: [13, 26],
+    popupAnchor: [0, -24],
+  });
+
+  insiderSpots.forEach(spot => {
+    const latlng = [spot.lat, spot.lng];
+    idToGroupKey[spot.id] = 'insider';
+    const marker = L.marker(latlng, { icon: insiderIcon }).addTo(layerGroups.insider.layer);
+
+    const mapsQuery = encodeURIComponent(`${spot.name} ${spot.address}`);
+    const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${mapsQuery}`;
+
+    const popupHtml = () => `
+      <div>
+        ${spot.image ? `<img class="popup-image" src="${spot.image}" alt="${spot.name}">` : ''}
+        <span class="popup-category" style="background:#2c3e50;">鎌倉通のこだわり店</span>
+        <button class="favorite-toggle-btn" data-id="${spot.id}" type="button">${isFavorite(spot.id) ? '⭐' : '☆'}</button>
+        <div><strong>${spot.name}</strong></div>
+        ${spot.memo ? `<div class="popup-memo">${spot.memo}</div>` : ''}
+        ${spot.address ? `<div class="popup-address">${spot.address}</div>` : ''}
+        <div class="popup-links">
+          ${spot.website ? `<a href="${spot.website}" target="_blank" rel="noopener">公式サイト</a>` : ''}
+          <a class="maps-link" href="${mapsUrl}" target="_blank" rel="noopener">Googleマップ</a>
+        </div>
+        <div class="visit-section" data-id="${spot.id}">${visitSectionHtml(spot.id)}</div>
+      </div>
+    `;
+    marker.bindPopup(popupHtml());
+    marker.on('popupopen', () => marker.setPopupContent(popupHtml()));
+
+    markersById[spot.id] = marker;
+    updateBadge(spot.id, latlng);
+    updateFavoriteBadge(spot.id, latlng);
+  });
+
+  // ------------------------------------------------------------
+  // 鎌倉といえば外せない王道のお店を赤茶色の🏆ピンとして地図に追加
+  // ------------------------------------------------------------
+  const classicIcon = L.divIcon({
+    className: '',
+    html: '<div class="classic-pin"><span>🏆</span></div>',
+    iconSize: [26, 26],
+    iconAnchor: [13, 26],
+    popupAnchor: [0, -24],
+  });
+
+  classicSpots.forEach(spot => {
+    const latlng = [spot.lat, spot.lng];
+    idToGroupKey[spot.id] = 'classic';
+    const marker = L.marker(latlng, { icon: classicIcon }).addTo(layerGroups.classic.layer);
+
+    const mapsQuery = encodeURIComponent(`${spot.name} ${spot.address}`);
+    const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${mapsQuery}`;
+
+    const popupHtml = () => `
+      <div>
+        ${spot.image ? `<img class="popup-image" src="${spot.image}" alt="${spot.name}">` : ''}
+        <span class="popup-category" style="background:#a1424a;">王道のお店</span>
+        <button class="favorite-toggle-btn" data-id="${spot.id}" type="button">${isFavorite(spot.id) ? '⭐' : '☆'}</button>
+        <div><strong>${spot.name}</strong></div>
+        ${spot.memo ? `<div class="popup-memo">${spot.memo}</div>` : ''}
+        ${spot.address ? `<div class="popup-address">${spot.address}</div>` : ''}
+        <div class="popup-links">
+          ${spot.website ? `<a href="${spot.website}" target="_blank" rel="noopener">公式サイト</a>` : ''}
+          <a class="maps-link" href="${mapsUrl}" target="_blank" rel="noopener">Googleマップ</a>
+        </div>
+        <div class="visit-section" data-id="${spot.id}">${visitSectionHtml(spot.id)}</div>
+      </div>
+    `;
+    marker.bindPopup(popupHtml());
+    marker.on('popupopen', () => marker.setPopupContent(popupHtml()));
+
+    markersById[spot.id] = marker;
+    updateBadge(spot.id, latlng);
+    updateFavoriteBadge(spot.id, latlng);
+  });
+
+  // ------------------------------------------------------------
+  // ポップアップ内の訪問記録フォームの操作を一括で処理
+  // (ポップアップは開くたびにDOMが作り直されるので、マップ全体で1つだけ登録する)
+  // ------------------------------------------------------------
+  function afterVisitChange(id) {
+    const marker = markersById[id];
+    if (marker) updateBadge(id, marker.getLatLng());
+    updateLegendCount();
+    updateVisibilityFilters();
+    renderSidebarList();
+  }
+
+  map.getContainer().addEventListener('click', (e) => {
+    // 訪問済みとして記録する
+    const submitBtn = e.target.closest('.visit-submit-btn');
+    if (submitBtn) {
+      const id = submitBtn.dataset.id;
+      const section = submitBtn.closest('.visit-section');
+      const date = section.querySelector('.visit-date-input').value || todayStr();
+      const memo = section.querySelector('.visit-memo-input').value.trim();
+      const existing = visited[id] || {};
+      const hasPendingChange = Object.prototype.hasOwnProperty.call(pendingPhotos, id);
+      const finalPhoto = hasPendingChange ? (pendingPhotos[id] || null) : (existing.photo || null);
+
+      visited[id] = { date, memo, photo: finalPhoto };
+      delete pendingPhotos[id];
+      editingIds.delete(id);
+      saveVisited();
+
+      section.innerHTML = visitSectionHtml(id);
+      afterVisitChange(id);
+      return;
+    }
+
+    // 編集モードに入る
+    const editBtn = e.target.closest('.visit-edit-btn');
+    if (editBtn) {
+      const id = editBtn.dataset.id;
+      editingIds.add(id);
+      editBtn.closest('.visit-section').innerHTML = visitSectionHtml(id);
+      return;
+    }
+
+    // 編集をやめて記録カード表示に戻す
+    const cancelBtn = e.target.closest('.visit-cancel-btn');
+    if (cancelBtn) {
+      const id = cancelBtn.dataset.id;
+      editingIds.delete(id);
+      delete pendingPhotos[id];
+      cancelBtn.closest('.visit-section').innerHTML = visitSectionHtml(id);
+      return;
+    }
+
+    // 訪問記録を削除する
+    const deleteBtn = e.target.closest('.visit-delete-btn');
+    if (deleteBtn) {
+      const id = deleteBtn.dataset.id;
+      delete visited[id];
+      delete pendingPhotos[id];
+      editingIds.delete(id);
+      saveVisited();
+
+      deleteBtn.closest('.visit-section').innerHTML = visitSectionHtml(id);
+      afterVisitChange(id);
+      return;
+    }
+
+    // フォーム入力中の写真をクリアする(保存はまだしない)
+    const removeBtn = e.target.closest('.photo-remove-btn');
+    if (removeBtn) {
+      const id = removeBtn.dataset.id;
+      pendingPhotos[id] = '';
+      removeBtn.closest('.photo-preview').innerHTML = '';
+      return;
+    }
+
+    // お気に入り(★)の切り替え
+    const favBtn = e.target.closest('.favorite-toggle-btn');
+    if (favBtn) {
+      const id = favBtn.dataset.id;
+      if (isFavorite(id)) {
+        delete favorites[id];
+      } else {
+        favorites[id] = true;
+      }
+      saveFavorites();
+      favBtn.textContent = isFavorite(id) ? '⭐' : '☆';
+      const marker = markersById[id];
+      if (marker) updateFavoriteBadge(id, marker.getLatLng());
+      updateVisibilityFilters();
+      renderSidebarList();
+      return;
+    }
+  });
+
+  // サイドバーはmap要素の外側にあるため、専用のリスナーでクリックを処理する
+  document.getElementById('sidebar-list').addEventListener('click', (e) => {
+    const sidebarItem = e.target.closest('.sidebar-item');
+    if (sidebarItem) {
+      focusSpot(sidebarItem.dataset.id);
+    }
+  });
+
+  // 写真ファイルが選択されたら、縮小してプレビュー表示する(保存はまだしない)
+  map.getContainer().addEventListener('change', (e) => {
+    if (!e.target.matches('.visit-photo-input')) return;
+    const id = e.target.dataset.id;
+    const file = e.target.files[0];
+    if (!file) return;
+    readAndCompressImage(file, (dataUrl) => {
+      pendingPhotos[id] = dataUrl;
+      const preview = e.target.closest('.visit-form').querySelector('.photo-preview');
+      preview.innerHTML = `<img src="${dataUrl}" alt="preview"><button class="photo-remove-btn" data-id="${id}" type="button">✕ 写真を削除</button>`;
+    });
+  });
+
+  // ------------------------------------------------------------
+  // 凡例コントロール(チェックボックスでカテゴリごとに表示/非表示を切り替え)
+  // ------------------------------------------------------------
+  const legend = L.control({ position: 'topright' });
+  legend.onAdd = function () {
+    const div = L.DomUtil.create('div', 'map-legend');
+
+    const rows = Object.keys(layerGroups).map(key => {
+      const g = layerGroups[key];
+      return `<label><input type="checkbox" data-group="${key}"> ${g.swatchHtml}${g.label}</label>`;
+    }).join('');
+
+    div.innerHTML = rows
+      + `<label class="unvisited-toggle"><input type="checkbox" id="unvisited-only-toggle"> 🔍 未訪問のみ表示</label>`
+      + `<label class="unvisited-toggle"><input type="checkbox" id="favorites-only-toggle"> ⭐ お気に入りのみ表示</label>`
+      + `<div class="visited-count" id="visited-count-text"></div>`
+      + `<div class="progress-bar-track overall-progress"><div class="progress-bar-fill" id="overall-progress-fill" style="width:0%"></div></div>`;
+
+    // 地図の下にあるコントロールをクリックしても地図がパン/ズームしないようにする
+    L.DomEvent.disableClickPropagation(div);
+    L.DomEvent.disableScrollPropagation(div);
+
+    // カテゴリごとの表示/非表示チェックボックス(data-group属性を持つものだけが対象)
+    div.querySelectorAll('input[data-group]').forEach(checkbox => {
+      categoryCheckboxes[checkbox.dataset.group] = checkbox;
+      // HTML属性の checked だけだとブラウザのフォーム状態復元と衝突して
+      // 一部だけチェックが外れることがあるため、プロパティで明示的にONにする
+      checkbox.checked = true;
+      checkbox.addEventListener('change', () => {
+        const key = checkbox.dataset.group;
+        const layer = layerGroups[key].layer;
+        if (checkbox.checked) {
+          map.addLayer(layer);
+        } else {
+          map.removeLayer(layer);
+        }
+      });
+    });
+
+    // 「未訪問のみ表示」トグル
+    const unvisitedToggle = div.querySelector('#unvisited-only-toggle');
+    unvisitedToggle.checked = false;
+    unvisitedToggle.addEventListener('change', () => {
+      showOnlyUnvisited = unvisitedToggle.checked;
+      updateVisibilityFilters();
+    });
+
+    // 「お気に入りのみ表示」トグル
+    const favoritesToggle = div.querySelector('#favorites-only-toggle');
+    favoritesToggle.checked = false;
+    favoritesToggle.addEventListener('change', () => {
+      showOnlyFavorites = favoritesToggle.checked;
+      updateVisibilityFilters();
+    });
+
+    return div;
+  };
+  legend.addTo(map);
+
+  // ------------------------------------------------------------
+  // サイドバー(スポット一覧)
+  // ------------------------------------------------------------
+  const allSpotsFlat = spots.concat(dramaSpots, sequelDramaSpots, oldHouseCafes, dateSpots, insiderSpots, classicSpots);
+
+  const sidebarToggle = L.control({ position: 'topleft' });
+  sidebarToggle.onAdd = function () {
+    const btn = L.DomUtil.create('div', 'sidebar-toggle-btn');
+    btn.textContent = '☰ 一覧';
+    L.DomEvent.disableClickPropagation(btn);
+    btn.addEventListener('click', () => {
+      document.getElementById('sidebar').classList.add('open');
+    });
+    return btn;
+  };
+  sidebarToggle.addTo(map);
+
+  const aiToggle = L.control({ position: 'topright' });
+  aiToggle.onAdd = function () {
+    const btn = L.DomUtil.create('div', 'ai-toggle-btn');
+    btn.textContent = '✨ ルート提案';
+    L.DomEvent.disableClickPropagation(btn);
+    btn.addEventListener('click', () => {
+      document.getElementById('ai-planner').classList.add('open');
+    });
+    return btn;
+  };
+  aiToggle.addTo(map);
+
+  document.getElementById('ai-close').addEventListener('click', () => {
+    document.getElementById('ai-planner').classList.remove('open');
+  });
+
+  document.getElementById('sidebar-close').addEventListener('click', () => {
+    document.getElementById('sidebar').classList.remove('open');
+  });
+
+  document.getElementById('sidebar-search').addEventListener('input', (e) => {
+    renderSidebarList(e.target.value);
+  });
+
+  // サイドバーの検索キーワード(訪問記録の更新などでリストを再描画するときも保持する)
+  let currentSearchTerm = '';
+
+  function sidebarListItemHtml(s) {
+    const v = isVisited(s.id);
+    const f = isFavorite(s.id);
+    return `<li class="sidebar-item ${v ? 'visited' : ''}" data-id="${s.id}">${v ? '✅' : '⬜'}${f ? '⭐' : ''} ${s.name}</li>`;
+  }
+
+  function renderSidebarList(searchTerm) {
+    if (searchTerm !== undefined) currentSearchTerm = searchTerm;
+    const listEl = document.getElementById('sidebar-list');
+    if (!listEl) return;
+
+    const term = currentSearchTerm.trim().toLowerCase();
+
+    if (term) {
+      // ---- 検索モード: カテゴリ分けせず、名前が一致するものだけをフラットに表示 ----
+      const matches = allSpotsFlat.filter(s => s.name.toLowerCase().includes(term));
+      if (matches.length === 0) {
+        listEl.innerHTML = `<div class="sidebar-search-empty">「${escapeHtml(currentSearchTerm)}」に一致するスポットが見つかりません</div>`;
+        return;
+      }
+      const li = matches.map(sidebarListItemHtml).join('');
+      listEl.innerHTML = `<div class="sidebar-search-result-count">${matches.length}件ヒット</div><ul>${li}</ul>`;
+      return;
+    }
+
+    // ---- 通常モード: カテゴリごとにグループ化し、訪問進捗バーを表示 ----
+    const byGroup = {};
+    allSpotsFlat.forEach(s => {
+      const key = idToGroupKey[s.id];
+      (byGroup[key] = byGroup[key] || []).push(s);
+    });
+
+    listEl.innerHTML = Object.keys(layerGroups).map(key => {
+      const items = byGroup[key] || [];
+      const visitedCount = items.filter(s => isVisited(s.id)).length;
+      const pct = items.length ? Math.round(visitedCount / items.length * 100) : 0;
+      const li = items.map(sidebarListItemHtml).join('');
+      return `<details open><summary>
+          <div class="summary-label-row">${layerGroups[key].swatchHtml}${layerGroups[key].label}(${visitedCount}/${items.length})</div>
+          <div class="progress-bar-track"><div class="progress-bar-fill" style="width:${pct}%"></div></div>
+        </summary><ul>${li}</ul></details>`;
+    }).join('');
+  }
+
+  // サイドバーの項目クリックで該当スポットまでジャンプし、ポップアップを開く
+  function focusSpot(id) {
+    const key = idToGroupKey[id];
+    const group = layerGroups[key];
+    const marker = markersById[id];
+    if (!group || !marker) return;
+
+    // そのカテゴリが非表示になっていたらONに戻す
+    if (!map.hasLayer(group.layer)) {
+      map.addLayer(group.layer);
+      if (categoryCheckboxes[key]) categoryCheckboxes[key].checked = true;
+    }
+    // 「未訪問のみ表示」で個別に隠れている場合も見えるようにする
+    if (!group.layer.hasLayer(marker)) {
+      group.layer.addLayer(marker);
+    }
+
+    map.setView(marker.getLatLng(), 17);
+    marker.openPopup();
+    document.getElementById('sidebar').classList.remove('open');
+  }
+
+  updateLegendCount();
+  renderSidebarList();
+
+  // ------------------------------------------------------------
+  // ✨ AIルート提案(Claude API / claude-opus-5 を直接ブラウザから呼び出す)
+  // ------------------------------------------------------------
+  const AI_KEY_STORAGE = 'kamakuraMapAnthropicKey';
+  const aiKeyInput = document.getElementById('ai-key-input');
+  const aiQueryInput = document.getElementById('ai-query-input');
+  const aiSubmitBtn = document.getElementById('ai-submit-btn');
+  const aiStatusArea = document.getElementById('ai-status-area');
+  const aiResultArea = document.getElementById('ai-result-area');
+
+  try {
+    aiKeyInput.value = localStorage.getItem(AI_KEY_STORAGE) || '';
+  } catch (e) { /* localStorage unavailable */ }
+
+  aiKeyInput.addEventListener('change', () => {
+    try { localStorage.setItem(AI_KEY_STORAGE, aiKeyInput.value.trim()); } catch (e) {}
+  });
+
+  let suggestedRouteLine = null;
+  let suggestedRouteMarkers = [];
+
+  function clearSuggestedRoute() {
+    if (suggestedRouteLine) { suggestedRouteLine.remove(); suggestedRouteLine = null; }
+    suggestedRouteMarkers.forEach(m => m.remove());
+    suggestedRouteMarkers = [];
+  }
+
+  function showSuggestedRoute(stopIds) {
+    clearSuggestedRoute();
+    const latlngs = [];
+    stopIds.forEach((id, i) => {
+      const marker = markersById[id];
+      if (!marker) return;
+      const ll = marker.getLatLng();
+      latlngs.push(ll);
+      const numIcon = L.divIcon({
+        className: '',
+        html: `<div style="width:22px;height:22px;border-radius:50%;background:#6a3fa0;color:#fff;border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:bold;font-family:sans-serif;">${i + 1}</div>`,
+        iconSize: [22, 22],
+        iconAnchor: [11, 11],
+      });
+      suggestedRouteMarkers.push(L.marker(ll, { icon: numIcon, zIndexOffset: 5000, interactive: false }).addTo(map));
+    });
+    if (latlngs.length > 1) {
+      suggestedRouteLine = L.polyline(latlngs, { color: '#6a3fa0', weight: 3, dashArray: '2 8', opacity: 0.85 }).addTo(map);
+      map.fitBounds(suggestedRouteLine.getBounds(), { padding: [60, 60] });
+    } else if (latlngs.length === 1) {
+      map.setView(latlngs[0], 16);
+    }
+  }
+
+  // 送信用に、全スポットをコンパクトなJSONへ(トークン節約のため座標は4桁、メモは短縮)
+  function buildSpotContext() {
+    return allSpotsFlat.map(s => ({
+      id: s.id,
+      name: s.name,
+      group: layerGroups[idToGroupKey[s.id]] ? layerGroups[idToGroupKey[s.id]].label : (s.category || ''),
+      lat: Math.round(s.lat * 10000) / 10000,
+      lng: Math.round(s.lng * 10000) / 10000,
+      visited: isVisited(s.id),
+      favorite: isFavorite(s.id),
+      note: (s.memo || '').slice(0, 50),
+    }));
+  }
+
+  function setAiLoading(isLoading) {
+    aiSubmitBtn.disabled = isLoading;
+    aiSubmitBtn.textContent = isLoading ? '考え中...' : 'この条件でルートを提案してもらう';
+  }
+
+  function renderAiError(message) {
+    aiStatusArea.innerHTML = `<div class="ai-error">${escapeHtml(message)}</div>`;
+  }
+
+  function renderAiResult(data) {
+    const validStops = (data.stops || []).filter(s => markersById[s.id]);
+    if (validStops.length === 0) {
+      renderAiError('提案が空でした。条件を変えてもう一度試してみてください。');
+      return;
+    }
+    const listHtml = validStops.map((s, i) => {
+      const spot = allSpotsFlat.find(x => x.id === s.id);
+      return `<li class="ai-stop-item" data-id="${s.id}">
+        <div class="ai-stop-name">${i + 1}. ${spot ? escapeHtml(spot.name) : s.id}</div>
+        ${s.reason ? `<div class="ai-stop-reason">${escapeHtml(s.reason)}</div>` : ''}
+      </li>`;
+    }).join('');
+
+    aiResultArea.innerHTML = `
+      <div class="ai-result">
+        ${data.summary ? `<div class="ai-result-summary">${escapeHtml(data.summary)}</div>` : ''}
+        <button class="ai-show-route-btn" type="button" id="ai-show-route-btn">🗺 このルートを地図に表示</button>
+        <button class="ai-clear-route-btn" type="button" id="ai-clear-route-btn">ルート表示を消す</button>
+        <ul class="ai-stop-list">${listHtml}</ul>
+      </div>
+    `;
+
+    const stopIds = validStops.map(s => s.id);
+    document.getElementById('ai-show-route-btn').addEventListener('click', () => showSuggestedRoute(stopIds));
+    document.getElementById('ai-clear-route-btn').addEventListener('click', clearSuggestedRoute);
+    aiResultArea.querySelectorAll('.ai-stop-item').forEach(li => {
+      li.addEventListener('click', () => focusSpot(li.dataset.id));
+    });
+
+    // 提案が出たら自動でルートも描画しておく
+    showSuggestedRoute(stopIds);
+  }
+
+  // モデルの返答からJSON部分だけを取り出す(```json フェンスが付くことがあるため)
+  function extractJson(text) {
+    const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/i);
+    const raw = fenced ? fenced[1] : text;
+    const start = raw.indexOf('{');
+    const end = raw.lastIndexOf('}');
+    if (start === -1 || end === -1) throw new Error('JSON not found in response');
+    return JSON.parse(raw.slice(start, end + 1));
+  }
+
+  async function requestRouteSuggestion() {
+    const apiKey = aiKeyInput.value.trim();
+    const userQuery = aiQueryInput.value.trim();
+    aiStatusArea.innerHTML = '';
+    aiResultArea.innerHTML = '';
+
+    if (!apiKey) {
+      renderAiError('Anthropic APIキーを入力してください。');
+      return;
+    }
+    if (!userQuery) {
+      renderAiError('今日やりたいことを入力してください。');
+      return;
+    }
+
+    try { localStorage.setItem(AI_KEY_STORAGE, apiKey); } catch (e) {}
+
+    const spotContext = buildSpotContext();
+    const visitedCount = spotContext.filter(s => s.visited).length;
+
+    const systemPrompt = `あなたは鎌倉散策マップアプリのルート提案アシスタントです。
+以下はユーザーが登録している全スポットのリスト(JSON配列)です。各項目は id・name・group(カテゴリ)・lat/lng(緯度経度)・visited(訪問済みか)・favorite(お気に入りか)・note(補足)を持ちます。
+
+${JSON.stringify(spotContext)}
+
+ユーザーの自由記述のリクエストを読み、上記リストの中から4〜8件程度のスポットを選んで、徒歩で無理なく回れる順番(できるだけ近い場所同士を隣接させ、行ったり来たりしないルート)で提案してください。
+
+ルール:
+- 特別な指定がない限り、visited:true(訪問済み)のスポットは避け、まだ行っていない場所を優先してください。ユーザーが「もう一度行きたい」「お気に入りをまた回りたい」のように明示した場合はvisited:trueや favorite:true のスポットを含めて構いません。
+- リスト(上記JSON)に存在するidのみを使ってください。存在しないidや架空の場所を作らないでください。
+- 出力は日本語で、説明文やMarkdownを含めず、次の形式のJSONオブジェクトのみを返してください:
+{"summary": "提案の要約(1〜2文)", "stops": [{"id": "スポットのid", "reason": "この場所を選んだ短い理由(1文)"}]}`;
+
+    setAiLoading(true);
+    aiStatusArea.innerHTML = `<div class="ai-status">Claudeに問い合わせています...(全${spotContext.length}件中、訪問済み${visitedCount}件を考慮)</div>`;
+
+    try {
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true',
+        },
+        body: JSON.stringify({
+          model: 'claude-opus-5',
+          max_tokens: 2048,
+          output_config: { effort: 'medium' },
+          system: systemPrompt,
+          messages: [{ role: 'user', content: userQuery }],
+        }),
+      });
+
+      if (!res.ok) {
+        const errBody = await res.json().catch(() => null);
+        const errMsg = errBody && errBody.error ? errBody.error.message : `HTTPエラー ${res.status}`;
+        if (res.status === 401) {
+          renderAiError('APIキーが正しくないか、無効になっています。Anthropic Consoleで確認してください。');
+        } else if (res.status === 429) {
+          renderAiError('リクエストが混み合っています。少し待ってからもう一度試してください。');
+        } else {
+          renderAiError(`APIエラー: ${errMsg}`);
+        }
+        return;
+      }
+
+      const data = await res.json();
+      const textBlock = (data.content || []).find(b => b.type === 'text');
+      if (!textBlock) {
+        renderAiError('応答からテキストを取得できませんでした。');
+        return;
+      }
+
+      let parsed;
+      try {
+        parsed = extractJson(textBlock.text);
+      } catch (e) {
+        renderAiError('応答の解析に失敗しました。もう一度試してみてください。');
+        return;
+      }
+
+      aiStatusArea.innerHTML = '';
+      renderAiResult(parsed);
+    } catch (err) {
+      renderAiError('通信に失敗しました。ネットワーク接続を確認してください。(' + err.message + ')');
+    } finally {
+      setAiLoading(false);
+    }
+  }
+
+  aiSubmitBtn.addEventListener('click', requestRouteSuggestion);
+</script>
+
+</body>
+</html>
