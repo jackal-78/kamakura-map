@@ -39,6 +39,62 @@
     border-radius: 6px;
     margin-bottom: 6px;
   }
+  .popup-carousel {
+    position: relative;
+    width: 100%;
+    max-width: 240px;
+    margin-bottom: 6px;
+  }
+  .popup-carousel .popup-image {
+    margin-bottom: 0;
+    user-select: none;
+    -webkit-user-drag: none;
+  }
+  .carousel-arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(0,0,0,0.45);
+    color: #fff;
+    border: none;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    font-size: 15px;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+  }
+  .carousel-arrow:hover {
+    background: rgba(0,0,0,0.65);
+  }
+  .carousel-prev { left: 4px; }
+  .carousel-next { right: 4px; }
+  .carousel-dots {
+    position: absolute;
+    bottom: 6px;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: center;
+    gap: 4px;
+  }
+  .carousel-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.65);
+    border: 1px solid rgba(0,0,0,0.25);
+    cursor: pointer;
+    padding: 0;
+  }
+  .carousel-dot.active {
+    background: #fff;
+    border-color: #333;
+  }
   .popup-address {
     margin-top: 2px;
     font-size: 12px;
@@ -170,6 +226,37 @@
     line-height: 1.8;
     max-height: 80vh;
     overflow-y: auto;
+  }
+  .map-legend-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    cursor: pointer;
+    user-select: none;
+    font-weight: bold;
+    font-size: 12.5px;
+  }
+  .map-legend.collapsed {
+    max-height: none;
+    overflow: visible;
+  }
+  .map-legend.collapsed .map-legend-header {
+    padding: 2px 0;
+  }
+  .map-legend.collapsed .map-legend-body {
+    display: none;
+  }
+  .map-legend-toggle-icon {
+    font-size: 10px;
+    color: #888;
+    transition: transform 0.15s ease;
+  }
+  .map-legend.collapsed .map-legend-toggle-icon {
+    transform: rotate(-90deg);
+  }
+  .map-legend-body {
+    margin-top: 6px;
   }
   .map-legend label {
     display: flex;
@@ -720,6 +807,42 @@
     cursor: pointer;
     margin-bottom: 6px;
   }
+
+  /* ---- 定番ルートプリセット ---- */
+  .preset-section {
+    margin-bottom: 4px;
+  }
+  .preset-list {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    margin-top: 8px;
+  }
+  .preset-card {
+    display: block;
+    width: 100%;
+    text-align: left;
+    background: #fff;
+    border: 1px solid #e2e2e2;
+    border-left: 4px solid #999;
+    border-radius: 5px;
+    padding: 8px 10px;
+    cursor: pointer;
+    font: inherit;
+  }
+  .preset-card:hover {
+    background: #f7f7f7;
+  }
+  .preset-card .preset-title {
+    font-weight: bold;
+    font-size: 12.5px;
+    color: #333;
+  }
+  .preset-card .preset-subtitle {
+    font-size: 11px;
+    color: #888;
+    margin-top: 2px;
+  }
 </style>
 </head>
 <body>
@@ -740,7 +863,15 @@
     <span>✨ 今日のルート提案</span>
     <button id="ai-close" aria-label="閉じる">✕</button>
   </div>
-  <p class="ai-subtitle">やりたいことを自由に書くと、訪問済みの場所を考慮しながらClaude(Opus 5)がルートを提案します。</p>
+
+  <div class="preset-section">
+    <div class="ai-field-label" style="margin-top:0;">📋 定番コースから選ぶ</div>
+    <div id="preset-list" class="preset-list"></div>
+  </div>
+
+  <div class="stitch" style="margin:16px 0;"></div>
+
+  <p class="ai-subtitle">または、やりたいことを自由に書くと、訪問済みの場所を考慮しながらClaude(Opus 5)がルートを提案します。</p>
 
   <label class="ai-field-label" for="ai-key-input">Anthropic APIキー</label>
   <input type="password" id="ai-key-input" class="ai-key-input" placeholder="sk-ant-...">
@@ -768,27 +899,27 @@
   //   memo     : 補足メモ(なくてもOK)
   // ------------------------------------------------------------
   const spots = [
-    { id: 'spot-station',       name: '鎌倉駅',                     category: '駅',     lat: 35.3189, lng: 139.5500, memo: 'JR横須賀線・江ノ電の起点', image: 'https://upload.wikimedia.org/wikipedia/commons/f/fc/Enoden_Kamakura_Station.jpg' },
-    { id: 'spot-tsurugaoka',    name: '鶴岡八幡宮',                 category: '寺社',   lat: 35.3255, lng: 139.5564, memo: '鎌倉のシンボル的な神社', image: 'https://enokama.jp/wp-content/uploads/2022/04/22fuyu_enokama_B3W_tsurugaokahachimangu-1536x1024.jpg' },
-    { id: 'spot-kotokuin',      name: '高徳院(鎌倉大仏)',           category: '寺社',   lat: 35.3167, lng: 139.5359, memo: '長谷にある有名な大仏', image: 'https://enokama.jp/wp-content/uploads/2022/10/koutokuin-1536x1000.jpg' },
-    { id: 'spot-hasedera',      name: '長谷寺',                     category: '寺社',   lat: 35.3122, lng: 139.5347, memo: '眺望のよい花のお寺', image: 'https://enokama.jp/wp-content/uploads/2022/06/IMG_1899-1536x1024.jpg' },
-    { id: 'spot-kenchoji',      name: '建長寺',                     category: '寺社',   lat: 35.3363, lng: 139.5504, memo: '鎌倉五山第一位', image: 'https://enokama.jp/wp-content/uploads/2023/03/建長寺の桜　DSC_0080-1536x864.jpg' },
-    { id: 'spot-engakuji',      name: '円覚寺',                     category: '寺社',   lat: 35.3379, lng: 139.5479, memo: '北鎌倉駅すぐの禅寺', image: 'https://enokama.jp/wp-content/uploads/2021/11/DSCF3812-1536x1024.jpg' },
-    { id: 'spot-meigetsuin',    name: '明月院',                     category: '寺社',   lat: 35.3352, lng: 139.5459, memo: 'あじさい寺として有名', image: 'https://enokama.jp/wp-content/uploads/2023/03/meigetsuin_sakura-1536x1024.jpg' },
-    { id: 'spot-hokokuji',      name: '報国寺',                     category: '寺社',   lat: 35.3167, lng: 139.5661, memo: '竹の庭で有名', image: 'https://enokama.jp/wp-content/uploads/2025/01/DSCF2171-1024x683.jpg' },
-    { id: 'spot-zeniarai',      name: '銭洗弁財天宇賀福神社',       category: '寺社',   lat: 35.3186, lng: 139.5424, memo: 'お金を洗うと増えると言われる', image: 'https://enokama.jp/wp-content/uploads/2022/04/銭洗弁天_0007-1536x1025.jpg' },
-    { id: 'spot-yuigahama',     name: '由比ヶ浜海岸',               category: '自然',   lat: 35.3082, lng: 139.5432, memo: '鎌倉を代表する海岸', image: 'https://enokama.jp/wp-content/uploads/2021/11/由比ガ浜-1536x1024.jpg' },
-    { id: 'spot-koko-crossing', name: '鎌倉高校前踏切',             category: '自然',   lat: 35.3055, lng: 139.5265, memo: '海と江ノ電が見える有名スポット', image: 'https://upload.wikimedia.org/wikipedia/commons/8/8a/Kamakura_koukou_mae_Fumikiri_-_02.jpg' },
-    { id: 'spot-genjiyama',     name: '源氏山公園',                 category: '自然',   lat: 35.3264755, lng: 139.5434344, memo: '源頼朝ゆかりの丘陵公園。桜と紅葉の名所で、山頂には頼朝像が立つ', image: 'https://enokama.jp/wp-content/uploads/2021/11/genjiyama1.jpg' },
-    { id: 'spot-kuzuharaoka-hiking', name: '葛原岡・大仏ハイキングコース', category: '自然', lat: 35.3288091, lng: 139.5428744, memo: '北鎌倉~長谷を結ぶ初心者向けコース。葛原岡神社を経て森林浴が楽しめる', image: 'https://enokama.jp/wp-content/uploads/2022/04/kuzuharaokajinja1-1536x1024.jpg' },
+    { id: 'spot-station',       name: '鎌倉駅',                     category: '駅',     lat: 35.3189, lng: 139.5500, memo: 'JR横須賀線・江ノ電の起点', images: ['https://upload.wikimedia.org/wikipedia/commons/f/fc/Enoden_Kamakura_Station.jpg'] },
+    { id: 'spot-tsurugaoka',    name: '鶴岡八幡宮',                 category: '寺社',   lat: 35.3255, lng: 139.5564, memo: '鎌倉のシンボル的な神社', images: ['https://enokama.jp/wp-content/uploads/2022/04/22fuyu_enokama_B3W_tsurugaokahachimangu-1536x1024.jpg'] },
+    { id: 'spot-kotokuin',      name: '高徳院(鎌倉大仏)',           category: '寺社',   lat: 35.3167, lng: 139.5359, memo: '長谷にある有名な大仏', images: ['https://enokama.jp/wp-content/uploads/2022/10/koutokuin-1536x1000.jpg'] },
+    { id: 'spot-hasedera',      name: '長谷寺',                     category: '寺社',   lat: 35.312472, lng: 139.532944, memo: '眺望のよい花のお寺', images: ['https://enokama.jp/wp-content/uploads/2022/06/IMG_1899-1536x1024.jpg'] },
+    { id: 'spot-kenchoji',      name: '建長寺',                     category: '寺社',   lat: 35.3363, lng: 139.5504, memo: '鎌倉五山第一位', images: ['https://enokama.jp/wp-content/uploads/2023/03/建長寺の桜　DSC_0080-1536x864.jpg'] },
+    { id: 'spot-engakuji',      name: '円覚寺',                     category: '寺社',   lat: 35.3379, lng: 139.5479, memo: '北鎌倉駅すぐの禅寺', images: ['https://enokama.jp/wp-content/uploads/2021/11/DSCF3812-1536x1024.jpg'] },
+    { id: 'spot-meigetsuin',    name: '明月院',                     category: '寺社',   lat: 35.3352, lng: 139.5459, memo: 'あじさい寺として有名', images: ['https://enokama.jp/wp-content/uploads/2023/03/meigetsuin_sakura-1536x1024.jpg'] },
+    { id: 'spot-hokokuji',      name: '報国寺',                     category: '寺社',   lat: 35.319972, lng: 139.569278, memo: '竹の庭で有名', images: ['https://enokama.jp/wp-content/uploads/2025/01/DSCF2171-1024x683.jpg'] },
+    { id: 'spot-zeniarai',      name: '銭洗弁財天宇賀福神社',       category: '寺社',   lat: 35.325761, lng: 139.542219, memo: 'お金を洗うと増えると言われる', images: ['https://enokama.jp/wp-content/uploads/2022/04/銭洗弁天_0007-1536x1025.jpg'] },
+    { id: 'spot-yuigahama',     name: '由比ヶ浜海岸',               category: '自然',   lat: 35.3091, lng: 139.5422, memo: '鎌倉を代表する海岸', images: ['https://enokama.jp/wp-content/uploads/2021/11/由比ガ浜-1536x1024.jpg'] },
+    { id: 'spot-koko-crossing', name: '鎌倉高校前踏切',             category: '自然',   lat: 35.3055, lng: 139.5265, memo: '海と江ノ電が見える有名スポット', images: ['https://upload.wikimedia.org/wikipedia/commons/8/8a/Kamakura_koukou_mae_Fumikiri_-_02.jpg'] },
+    { id: 'spot-genjiyama',     name: '源氏山公園',                 category: '自然',   lat: 35.3264755, lng: 139.5434344, memo: '源頼朝ゆかりの丘陵公園。桜と紅葉の名所で、山頂には頼朝像が立つ', images: ['https://enokama.jp/wp-content/uploads/2021/11/genjiyama1.jpg'] },
+    { id: 'spot-kuzuharaoka-hiking', name: '葛原岡・大仏ハイキングコース', category: '自然', lat: 35.3288091, lng: 139.5428744, memo: '北鎌倉~長谷を結ぶ初心者向けコース。葛原岡神社を経て森林浴が楽しめる', images: ['https://enokama.jp/wp-content/uploads/2022/04/kuzuharaokajinja1-1536x1024.jpg'] },
     { id: 'spot-tenen-hiking',  name: '天園ハイキングコース',       category: '自然',   lat: 35.3353059, lng: 139.5764227, memo: '鎌倉最高峰・大平山を含む本格コース(通称「鎌倉アルプス」)。相模湾と富士山を望む' },
     { id: 'spot-kinugasayama',  name: '衣張山',                     category: '自然',   lat: 35.3156089, lng: 139.5668283, memo: '観光客の少ない隠れた絶景スポット。山頂から由比ヶ浜~材木座の海を一望できる' },
-    { id: 'spot-zaimokuza-beach', name: '材木座海岸',               category: '自然',   lat: 35.3048493, lng: 139.5505470, memo: '由比ヶ浜より静かなビーチ。沖には鎌倉時代の港の遺構「和賀江島」が残る', image: 'https://enokama.jp/wp-content/uploads/2026/03/26natsu_wakaenoshima_jitsu_5D4_1782_web-1536x1024.jpg' },
-    { id: 'spot-tokeiji',       name: '東慶寺',                     category: '寺社',   lat: 35.3355479, lng: 139.5463811, memo: '北鎌倉。"縁切り寺"として知られる古刹。梅や花菖蒲など四季の花でも有名', image: 'https://tokeiji.com/tokeiji_wp/wp-content/themes/tokeiji/assets/images/index/p_sanmon_sp.jpg' },
-    { id: 'spot-jochiji',       name: '浄智寺',                     category: '寺社',   lat: 35.3333982, lng: 139.5462449, memo: '北鎌倉。鎌倉五山第四位。趣のある鐘楼門と苔むした石段が印象的な静かな禅寺', image: 'https://enokama.jp/wp-content/uploads/2021/11/jochiji1-1024x682.jpg' },
-    { id: 'spot-ryukoji',       name: '龍口寺',                     category: '寺社',   lat: 35.3117107, lng: 139.4893788, memo: '西鎌倉・腰越。日蓮聖人ゆかりの霊跡。神奈川県内唯一の本格木造五重塔がある', image: 'https://enokama.jp/wp-content/uploads/2025/11/DSCF2861-1024x683.jpg' },
-    { id: 'spot-ofuna-kannon',  name: '大船観音寺',                 category: '寺社',   lat: 35.3530247, lng: 139.5284041, memo: '大船。高さ約25mの白衣観音像が大船のシンボル。展望台から街並みを一望できる', image: 'https://upload.wikimedia.org/wikipedia/commons/5/50/Ofuna-Kannon.jpg' },
-    { id: 'spot-ofuna-flower-center', name: '大船フラワーセンター(神奈川県立)', category: '自然', lat: 35.3480618, lng: 139.5209316, memo: '大船。四季折々の花が楽しめる県立植物園。シャクヤクのコレクションが有名', image: 'https://www.pref.kanagawa.jp/images/5243/syakuyaku.jpg' },
+    { id: 'spot-zaimokuza-beach', name: '材木座海岸',               category: '自然',   lat: 35.3048493, lng: 139.5505470, memo: '由比ヶ浜より静かなビーチ。沖には鎌倉時代の港の遺構「和賀江島」が残る', images: ['https://enokama.jp/wp-content/uploads/2026/03/26natsu_wakaenoshima_jitsu_5D4_1782_web-1536x1024.jpg'] },
+    { id: 'spot-tokeiji',       name: '東慶寺',                     category: '寺社',   lat: 35.3355479, lng: 139.5463811, memo: '北鎌倉。"縁切り寺"として知られる古刹。梅や花菖蒲など四季の花でも有名', images: ['https://tokeiji.com/tokeiji_wp/wp-content/themes/tokeiji/assets/images/index/p_sanmon_sp.jpg'] },
+    { id: 'spot-jochiji',       name: '浄智寺',                     category: '寺社',   lat: 35.3333982, lng: 139.5462449, memo: '北鎌倉。鎌倉五山第四位。趣のある鐘楼門と苔むした石段が印象的な静かな禅寺', images: ['https://enokama.jp/wp-content/uploads/2021/11/jochiji1-1024x682.jpg'] },
+    { id: 'spot-ryukoji',       name: '龍口寺',                     category: '寺社',   lat: 35.3117107, lng: 139.4893788, memo: '西鎌倉・腰越。日蓮聖人ゆかりの霊跡。神奈川県内唯一の本格木造五重塔がある', images: ['https://enokama.jp/wp-content/uploads/2025/11/DSCF2861-1024x683.jpg'] },
+    { id: 'spot-ofuna-kannon',  name: '大船観音寺',                 category: '寺社',   lat: 35.3530247, lng: 139.5284041, memo: '大船。高さ約25mの白衣観音像が大船のシンボル。展望台から街並みを一望できる', images: ['https://upload.wikimedia.org/wikipedia/commons/5/50/Ofuna-Kannon.jpg'] },
+    { id: 'spot-ofuna-flower-center', name: '大船フラワーセンター(神奈川県立)', category: '自然', lat: 35.3480618, lng: 139.5209316, memo: '大船。四季折々の花が楽しめる県立植物園。シャクヤクのコレクションが有名', images: ['https://www.pref.kanagawa.jp/images/5243/syakuyaku.jpg'] },
   ];
 
   // カテゴリごとの色分け
@@ -803,24 +934,24 @@
   // 実在するロケ地をピンク色の🎬ピンで表示(通常スポットと区別するため)
   // ------------------------------------------------------------
   const dramaSpots = [
-    { id: 'drama-gokurakuji-station', name: '極楽寺駅', lat: 35.3092118, lng: 139.5286725, memo: '江ノ電の駅。シリーズを通して繰り返し登場する物語の"起点"', image: 'https://upload.wikimedia.org/wikipedia/commons/e/e8/Gokurakuji_Station%2C_Enoden.JPG' },
-    { id: 'drama-sacanosita',         name: 'サカノシタ(旧cafe坂の下)', lat: 35.3111, lng: 139.5322, memo: '長倉家「カフェナガクラ」のモデルになった古民家カフェ', image: 'https://enokama.jp/wp-content/uploads/2023/12/1600px-topスライド1-1-1536x871.jpg' },
-    { id: 'drama-goryo-jinja',        name: '御霊神社', lat: 35.3109923, lng: 139.5327888, memo: '和平が江ノ電の踏切を通って帰宅する道。紫陽花の名所', image: 'https://enokama.jp/wp-content/uploads/2021/11/goryojinja1.jpg' },
-    { id: 'drama-venus-cafe',         name: 'Venus Cafe', lat: 35.3048864, lng: 139.5319281, memo: '典子(飯島直子)がアルバイトしていた海沿いのカフェ', image: 'https://enokama.jp/wp-content/uploads/2022/02/22haru_enokama_leaflet_venuscafe-1536x1024.jpg' },
-    { id: 'drama-hasedera',           name: '長谷寺(ロケ地)', lat: 35.3126, lng: 139.5351, memo: '第5話、鎌倉遠足の途中休憩地点', image: 'https://enokama.jp/wp-content/uploads/2022/06/IMG_1899-1536x1024.jpg' },
-    { id: 'drama-chikaramochiya',     name: '力餅家', lat: 35.3099556, lng: 139.5338090, memo: '千明(小泉今日子)が鎌倉視察の際に立ち寄った和菓子店', image: 'https://enokama.jp/wp-content/uploads/2022/01/chikaramochiya1.jpg' },
-    { id: 'drama-the-bank',           name: 'THE BANK', lat: 35.314914, lng: 139.546193, memo: '和平が同僚と飲んだ、元銀行を改装したバー', image: 'https://chinobouken.com/wp-content/uploads/2024/04/PXL_20240331_075336940_thebank.jpg' },
-    { id: 'drama-komyoji',            name: '光明寺', lat: 35.3033692, lng: 139.5545290, memo: 'フリーマーケット会場。和平がお見合い相手に声をかけられる', image: 'https://enokama.jp/wp-content/uploads/2023/03/komyoji1-1024x683.jpg' },
+    { id: 'drama-gokurakuji-station', name: '極楽寺駅', lat: 35.3092118, lng: 139.5286725, memo: '江ノ電の駅。シリーズを通して繰り返し登場する物語の"起点"', images: ['https://upload.wikimedia.org/wikipedia/commons/e/e8/Gokurakuji_Station%2C_Enoden.JPG'] },
+    { id: 'drama-sacanosita',         name: 'サカノシタ(旧cafe坂の下)', lat: 35.309308178878, lng: 139.53390580079, memo: '長倉家「カフェナガクラ」のモデルになった古民家カフェ', images: ['https://enokama.jp/wp-content/uploads/2023/12/1600px-topスライド1-1-1536x871.jpg'] },
+    { id: 'drama-goryo-jinja',        name: '御霊神社', lat: 35.3109923, lng: 139.5327888, memo: '和平が江ノ電の踏切を通って帰宅する道。紫陽花の名所', images: ['https://enokama.jp/wp-content/uploads/2021/11/goryojinja1.jpg'] },
+    { id: 'drama-venus-cafe',         name: 'Venus Cafe', lat: 35.3048864, lng: 139.5319281, memo: '典子(飯島直子)がアルバイトしていた海沿いのカフェ', images: ['https://enokama.jp/wp-content/uploads/2022/02/22haru_enokama_leaflet_venuscafe-1536x1024.jpg'] },
+    { id: 'drama-hasedera',           name: '長谷寺(ロケ地)', lat: 35.312472, lng: 139.532944, memo: '第5話、鎌倉遠足の途中休憩地点', images: ['https://enokama.jp/wp-content/uploads/2022/06/IMG_1899-1536x1024.jpg'] },
+    { id: 'drama-chikaramochiya',     name: '力餅家', lat: 35.3099556, lng: 139.5338090, memo: '千明(小泉今日子)が鎌倉視察の際に立ち寄った和菓子店', images: ['https://enokama.jp/wp-content/uploads/2022/01/chikaramochiya1.jpg'] },
+    { id: 'drama-the-bank',           name: 'THE BANK', lat: 35.314914, lng: 139.546193, memo: '和平が同僚と飲んだ、元銀行を改装したバー', images: ['https://chinobouken.com/wp-content/uploads/2024/04/PXL_20240331_075336940_thebank.jpg'] },
+    { id: 'drama-komyoji',            name: '光明寺', lat: 35.3033692, lng: 139.5545290, memo: 'フリーマーケット会場。和平がお見合い相手に声をかけられる', images: ['https://enokama.jp/wp-content/uploads/2023/03/komyoji1-1024x683.jpg'] },
     { id: 'drama-city-hall',          name: '鎌倉市役所', lat: 35.3191745, lng: 139.5472898, memo: '和平(中井貴一)の勤務先' },
-    { id: 'drama-yuigahama',          name: '由比ヶ浜(ロケ地)', lat: 35.3086, lng: 139.5436, memo: '海辺のシーンで繰り返し登場する砂浜', image: 'https://enokama.jp/wp-content/uploads/2021/11/由比ガ浜-1536x1024.jpg' },
+    { id: 'drama-yuigahama',          name: '由比ヶ浜(ロケ地)', lat: 35.3091, lng: 139.5422, memo: '海辺のシーンで繰り返し登場する砂浜', images: ['https://enokama.jp/wp-content/uploads/2021/11/由比ガ浜-1536x1024.jpg'] },
     { id: 'drama-ninotorii',          name: '二の鳥居', lat: 35.3194729, lng: 139.5523544, memo: '鎌倉遠足の集合場所。エンディングにも登場' },
-    { id: 'drama-zeniarai',           name: '銭洗弁財天(ロケ地)', lat: 35.3190, lng: 139.5420, memo: '千明たちがお金を洗うシーン', image: 'https://enokama.jp/wp-content/uploads/2022/04/銭洗弁天_0007-1536x1025.jpg' },
-    { id: 'drama-hokokuji',           name: '報国寺(ロケ地)', lat: 35.3171, lng: 139.5665, memo: '竹の庭。鎌倉遠足の目的地(通称「竹寺」)', image: 'https://enokama.jp/wp-content/uploads/2025/01/DSCF2171-1024x683.jpg' },
-    { id: 'drama-inamuragasaki-park', name: '稲村ヶ崎公園', lat: 35.3023736, lng: 139.5249973, memo: '海辺のシーンで頻繁に登場する公園', image: 'https://enokama.jp/wp-content/uploads/2025/05/IMG_7334-1536x1027.jpg' },
-    { id: 'drama-bergfeld-hase',      name: 'Bergfeld長谷店', lat: 35.3128150, lng: 139.5359333, memo: '最終回、和平と部下が今後について話す場所', image: 'https://enokama.jp/wp-content/uploads/2021/11/bergfeldhase2.jpg' },
-    { id: 'drama-iwata-coffee',       name: 'イワタ珈琲店', lat: 35.3193909, lng: 139.5513897, memo: '和平と秀子(美保純)がお茶した老舗喫茶店', image: 'https://enokama.jp/wp-content/uploads/2025/03/6_鎌倉-カフェ_イワタコーヒー店.jpg' },
-    { id: 'drama-cafe-bigaku',        name: 'カフェ鎌倉美学', lat: 35.3184716, lng: 139.5484840, memo: '最終回、千明と真平が別れ話をしたカフェ', image: 'https://enokama.jp/wp-content/uploads/2021/11/kamakurabigaku2-1.jpg' },
-    { id: 'drama-capio',              name: 'CAPIO(カピオ)', lat: 35.31066066871509, lng: 139.53306129751263, memo: '「長倉家」の外観ロケ地。築100年ほどの古民家で、現在はシチリア料理店として営業中(内観はサカノシタで撮影)', image: 'https://img.hanako.tokyo/2024/09/06102200/4AE2816.jpg' },
+    { id: 'drama-zeniarai',           name: '銭洗弁財天(ロケ地)', lat: 35.325761, lng: 139.542219, memo: '千明たちがお金を洗うシーン', images: ['https://enokama.jp/wp-content/uploads/2022/04/銭洗弁天_0007-1536x1025.jpg'] },
+    { id: 'drama-hokokuji',           name: '報国寺(ロケ地)', lat: 35.319972, lng: 139.569278, memo: '竹の庭。鎌倉遠足の目的地(通称「竹寺」)', images: ['https://enokama.jp/wp-content/uploads/2025/01/DSCF2171-1024x683.jpg'] },
+    { id: 'drama-inamuragasaki-park', name: '稲村ヶ崎公園', lat: 35.3023736, lng: 139.5249973, memo: '海辺のシーンで頻繁に登場する公園', images: ['https://enokama.jp/wp-content/uploads/2025/05/IMG_7334-1536x1027.jpg'] },
+    { id: 'drama-bergfeld-hase',      name: 'Bergfeld長谷店', lat: 35.3128150, lng: 139.5359333, memo: '最終回、和平と部下が今後について話す場所', images: ['https://enokama.jp/wp-content/uploads/2021/11/bergfeldhase2.jpg'] },
+    { id: 'drama-iwata-coffee',       name: 'イワタ珈琲店', lat: 35.3193909, lng: 139.5513897, memo: '和平と秀子(美保純)がお茶した老舗喫茶店', images: ['https://enokama.jp/wp-content/uploads/2025/03/6_鎌倉-カフェ_イワタコーヒー店.jpg'] },
+    { id: 'drama-cafe-bigaku',        name: 'カフェ鎌倉美学', lat: 35.3184716, lng: 139.5484840, memo: '最終回、千明と真平が別れ話をしたカフェ', images: ['https://enokama.jp/wp-content/uploads/2021/11/kamakurabigaku2-1.jpg'] },
+    { id: 'drama-capio',              name: 'CAPIO(カピオ)', lat: 35.31066066871509, lng: 139.53306129751263, memo: '「長倉家」の外観ロケ地。築100年ほどの古民家で、現在はシチリア料理店として営業中(内観はサカノシタで撮影)', images: ['https://img.hanako.tokyo/2024/09/06102200/4AE2816.jpg'] },
   ];
 
   // ------------------------------------------------------------
@@ -828,13 +959,13 @@
   // 前作(dramaSpots)とは別カテゴリとして、テイールの📺ピンで表示・個別に表示/非表示できるようにする
   // ------------------------------------------------------------
   const sequelDramaSpots = [
-    { id: 'sequel-enosui',         name: '新江ノ島水族館',              lat: 35.3100750,  lng: 139.4794388,  memo: '江の島エリアのロケ地。千明たちが訪れる水族館', image: 'https://enokama.jp/wp-content/uploads/2025/06/fantagyjf-1024x677.jpg' },
+    { id: 'sequel-enosui',         name: '新江ノ島水族館',              lat: 35.3100750,  lng: 139.4794388,  memo: '江の島エリアのロケ地。千明たちが訪れる水族館', images: ['https://enokama.jp/wp-content/uploads/2025/06/fantagyjf-1024x677.jpg'] },
     { id: 'sequel-bentenbashi',    name: '弁天橋',                      lat: 35.3044597,  lng: 139.4821935,  memo: '江の島の玄関口にかかる橋。ロケでも印象的に使われた' },
-    { id: 'sequel-manpukuji',      name: '満福寺',                      lat: 35.3077149,  lng: 139.4950194,  memo: '腰越・西鎌倉エリア。源義経ゆかりの寺', image: 'https://enokama.jp/wp-content/uploads/2022/10/満福寺外観.jpeg' },
-    { id: 'sequel-renbai',         name: '鎌倉市農協連即売所(レンバイ)', lat: 35.3171513,  lng: 139.5512057,  memo: '地元でも人気の朝市。買い物シーンで登場', image: 'https://enokama.jp/wp-content/uploads/2022/04/re_renbai3.jpg' },
+    { id: 'sequel-manpukuji',      name: '満福寺',                      lat: 35.3077149,  lng: 139.4950194,  memo: '腰越・西鎌倉エリア。源義経ゆかりの寺', images: ['https://enokama.jp/wp-content/uploads/2022/10/満福寺外観.jpeg'] },
+    { id: 'sequel-renbai',         name: '鎌倉市農協連即売所(レンバイ)', lat: 35.3171513,  lng: 139.5512057,  memo: '地元でも人気の朝市。買い物シーンで登場', images: ['https://enokama.jp/wp-content/uploads/2022/04/re_renbai3.jpg'] },
     { id: 'sequel-takaranoniwa',   name: '北鎌倉たからの庭',            lat: 35.33121394, lng: 139.54543165, memo: '古民家を活用したシェアアトリエ。庭でのシーンに使用' },
     { id: 'sequel-garb-enoshima',  name: 'GARB江ノ島',                  lat: 35.308572,   lng: 139.482089,   memo: '江の島を望むカフェ&レストラン' },
-    { id: 'sequel-sakanoshita-alley', name: '坂ノ下の路地(長倉家・吉野家)', lat: 35.310500, lng: 139.532500, memo: '続編の主要舞台。吉野千明の家と長倉家がある住宅街の路地', image: 'https://enokama.jp/wp-content/uploads/2023/12/1600px-topスライド1-1-1536x871.jpg' },
+    { id: 'sequel-sakanoshita-alley', name: '坂ノ下の路地(長倉家・吉野家)', lat: 35.310500, lng: 139.532500, memo: '続編の主要舞台。吉野千明の家と長倉家がある住宅街の路地', images: ['https://enokama.jp/wp-content/uploads/2023/12/1600px-topスライド1-1-1536x871.jpg'] },
     { id: 'sequel-gokurakujizaka', name: '極楽寺坂切通し', lat: 35.3110, lng: 139.5305, memo: '鎌倉七切通しのひとつ。中井貴一と小泉今日子が出会う場面などで使われた歴史ある坂道' },
     { id: 'sequel-yuigahama-park', name: '由比ヶ浜海浜公園', lat: 35.3105425, lng: 139.5436465, memo: '中井貴一と柴田理恵が野球の練習をする公園、キャラクター同士の出会いのシーン' },
     { id: 'sequel-chikusen',       name: '竹扇',                        lat: 35.31912203, lng: 139.54863402, memo: '昭和13年創業の手打ちそば店。中井貴一と佐津川愛美が会った蕎麦屋' },
@@ -848,40 +979,40 @@
   //   website : 公式サイト or 公式Instagram
   // ------------------------------------------------------------
   const oldHouseCafes = [
-    { id: 'cafe-mushinan',      name: '甘味処 無心庵',                     lat: 35.3137069,        lng: 139.54497153,      address: '鎌倉市由比ガ浜3-2-13',  memo: '築約100年。名物は「クリームあんみつ」、季節の草花が咲く庭が魅力',                    image: 'https://enokama.jp/wp-content/uploads/2021/11/mushinan2-1.png',                                             website: 'https://mushinan.chobi.net/' },
-    { id: 'cafe-yuigahama-st',  name: 'パンとエスプレッソと由比ガ浜商店', lat: 35.314996,         lng: 139.546011,        address: '鎌倉市由比ガ浜1-10-5',  memo: '築100年以上の元酒店。食パン「ムー」と焙煎コーヒーが自慢',                              image: 'https://enokama.jp/wp-content/uploads/2023/02/paness1.jpg',                                                  website: 'https://bread-espresso.jp/shop/yuigahama-st.html' },
-    { id: 'cafe-sacanosita',    name: 'サカノシタ',                       lat: 35.309308178878,   lng: 139.53390580079,   address: '鎌倉市坂ノ下21-15',     memo: '築100年。ドラマロケ地としても有名。「ピクニックパンケーキ」が名物',                    image: 'https://enokama.jp/wp-content/uploads/2023/12/1600px-topスライド1-1-1536x871.jpg',                            website: 'https://www.instagram.com/sacanosita_2115/' },
-    { id: 'cafe-plough',        name: 'plough',                           lat: 35.311002,         lng: 139.538354,        address: '鎌倉市長谷2-7-29',      memo: '築100年以上。看板メニューは「だしボウル」、竹林の庭園が印象的',                        image: 'https://kominnka-cafe-plough.com/wp-content/uploads/2025/10/slider_syusei1-scaled.webp',                    website: 'https://kominnka-cafe-plough.com/' },
-    { id: 'cafe-paso',          name: 'paso by 27 COFFEE ROASTERS',       lat: 35.30944844,       lng: 139.53381079,      address: '鎌倉市坂ノ下22-6',      memo: 'スペシャルティコーヒー専門店。縁側と畳席でくつろげる',                                image: 'https://enokama.jp/wp-content/uploads/2023/02/paso3.jpg',                                                    website: 'https://27coffee.jp/pages/paso' },
-    { id: 'cafe-with-kamakura', name: 'WITH KAMAKURA',                    lat: 35.311059,         lng: 139.533542,        address: '鎌倉市坂ノ下3-7',       memo: '築200年以上の合掌造り古民家。葉山牛ハンバーグなど「WITH御膳」が人気',                  image: null,                                                                                                          website: 'https://www.instagram.com/with_kamakura/' },
-    { id: 'cafe-kitahashi',     name: '鎌倉 北橋',                        lat: 35.313692878876,   lng: 139.53717907083,   address: '鎌倉市長谷1-11-32',     memo: '大正時代の建築(旧加賀谷邸)。手打ち蕎麦とコーヒーが名物。ドラマロケ地',                  image: 'https://kamakura-kitahashi.com/wp-content/uploads/2024/06/menu_soba-3.jpg',                                  website: 'https://kamakura-kitahashi.com/' },
-    { id: 'cafe-yukinoshita',   name: '古民家カフェ ユキノシタ',          lat: 35.32297867,       lng: 139.55577446,      address: '鎌倉市雪の下1-13-13',   memo: '築80年。ヴィーガンメニュー充実、「ユキノシタスパイスカレー」が人気',                    image: 'https://enokama.jp/wp-content/uploads/2024/04/1600pxTopスライド画像１-1536x871.jpg',                          website: 'https://www.instagram.com/yukinosita.kamakura/' },
-    { id: 'cafe-tsubame',       name: '燕カフェ',                         lat: 35.32115721,       lng: 139.55743901,      address: '鎌倉市小町3-2-27',      memo: '築90年超。骨董品が並ぶ店内。「薬膳カレー」が名物',                                    image: 'https://enokama.jp/wp-content/uploads/2022/02/tsubamecafe2.jpg',                                             website: 'https://www.instagram.com/tsubamecafe_kamakura/' },
-    { id: 'cafe-albicocca',     name: 'cafe＆foods albicocca',            lat: 35.327454598873,   lng: 139.55438076096,   address: '鎌倉市雪ノ下2-6-11',    memo: '築100年。オーナーシェフによるイタリアン。「とろ〜りチーズのオムバーグ」が人気',        image: 'https://enokama.jp/wp-content/uploads/2022/04/re_albicocca2.jpg',                                            website: 'https://albicocca-kamakura.com/' },
-    { id: 'cafe-egao',          name: 'Cafe&Restaurant EGAO',             lat: 35.31159518,       lng: 139.54611193,      address: '鎌倉市由比ガ浜2-21-15', memo: '築約50年。庭園を眺めながら食事。「自家製ベーコンステーキ」が人気',                      image: 'https://www.cafe-restaurant-egao.jp/wp-content/uploads/image1.jpg',                                          website: 'https://www.cafe-restaurant-egao.jp/' },
-    { id: 'cafe-cyan-kamakura', name: 'CYAN KAMAKURA',                    lat: 35.3241,           lng: 139.5387,          address: '鎌倉市佐助2-23-14',     memo: '築50年。佐助稲荷神社の入口近くの隠れ家。「鎌倉野菜カレー」が名物',                      image: 'https://enokama.jp/wp-content/uploads/2024/12/cyankamakura2.jpg',                                            website: 'https://www.instagram.com/cyan_kamakura/' },
+    { id: 'cafe-mushinan',      name: '甘味処 無心庵',                     lat: 35.3137069,        lng: 139.54497153,      address: '鎌倉市由比ガ浜3-2-13',  memo: '築約100年。名物は「クリームあんみつ」、季節の草花が咲く庭が魅力',                    images: ['https://enokama.jp/wp-content/uploads/2021/11/mushinan2-1.png'],                                             website: 'https://mushinan.chobi.net/' },
+    { id: 'cafe-yuigahama-st',  name: 'パンとエスプレッソと由比ガ浜商店', lat: 35.314996,         lng: 139.546011,        address: '鎌倉市由比ガ浜1-10-5',  memo: '築100年以上の元酒店。食パン「ムー」と焙煎コーヒーが自慢',                              images: ['https://enokama.jp/wp-content/uploads/2023/02/paness1.jpg'],                                                  website: 'https://bread-espresso.jp/shop/yuigahama-st.html' },
+    { id: 'cafe-sacanosita',    name: 'サカノシタ',                       lat: 35.309308178878,   lng: 139.53390580079,   address: '鎌倉市坂ノ下21-15',     memo: '築100年。ドラマロケ地としても有名。「ピクニックパンケーキ」が名物',                    images: ['https://enokama.jp/wp-content/uploads/2023/12/1600px-topスライド1-1-1536x871.jpg'],                            website: 'https://www.instagram.com/sacanosita_2115/' },
+    { id: 'cafe-plough',        name: 'plough',                           lat: 35.311002,         lng: 139.538354,        address: '鎌倉市長谷2-7-29',      memo: '築100年以上。看板メニューは「だしボウル」、竹林の庭園が印象的',                        images: ['https://kominnka-cafe-plough.com/wp-content/uploads/2025/10/slider_syusei1-scaled.webp'],                    website: 'https://kominnka-cafe-plough.com/' },
+    { id: 'cafe-paso',          name: 'paso by 27 COFFEE ROASTERS',       lat: 35.30944844,       lng: 139.53381079,      address: '鎌倉市坂ノ下22-6',      memo: 'スペシャルティコーヒー専門店。縁側と畳席でくつろげる',                                images: ['https://enokama.jp/wp-content/uploads/2023/02/paso3.jpg'],                                                    website: 'https://27coffee.jp/pages/paso' },
+    { id: 'cafe-with-kamakura', name: 'WITH KAMAKURA',                    lat: 35.311059,         lng: 139.533542,        address: '鎌倉市坂ノ下3-7',       memo: '築200年以上の合掌造り古民家。葉山牛ハンバーグなど「WITH御膳」が人気',                  images: [],                                                                                                          website: 'https://www.instagram.com/with_kamakura/' },
+    { id: 'cafe-kitahashi',     name: '鎌倉 北橋',                        lat: 35.313692878876,   lng: 139.53717907083,   address: '鎌倉市長谷1-11-32',     memo: '大正時代の建築(旧加賀谷邸)。手打ち蕎麦とコーヒーが名物。ドラマロケ地',                  images: ['https://kamakura-kitahashi.com/wp-content/uploads/2024/06/menu_soba-3.jpg'],                                  website: 'https://kamakura-kitahashi.com/' },
+    { id: 'cafe-yukinoshita',   name: '古民家カフェ ユキノシタ',          lat: 35.32297867,       lng: 139.55577446,      address: '鎌倉市雪の下1-13-13',   memo: '築80年。ヴィーガンメニュー充実、「ユキノシタスパイスカレー」が人気',                    images: ['https://enokama.jp/wp-content/uploads/2024/04/1600pxTopスライド画像１-1536x871.jpg'],                          website: 'https://www.instagram.com/yukinosita.kamakura/' },
+    { id: 'cafe-tsubame',       name: '燕カフェ',                         lat: 35.32115721,       lng: 139.55743901,      address: '鎌倉市小町3-2-27',      memo: '築90年超。骨董品が並ぶ店内。「薬膳カレー」が名物',                                    images: ['https://enokama.jp/wp-content/uploads/2022/02/tsubamecafe2.jpg'],                                             website: 'https://www.instagram.com/tsubamecafe_kamakura/' },
+    { id: 'cafe-albicocca',     name: 'cafe＆foods albicocca',            lat: 35.327454598873,   lng: 139.55438076096,   address: '鎌倉市雪ノ下2-6-11',    memo: '築100年。オーナーシェフによるイタリアン。「とろ〜りチーズのオムバーグ」が人気',        images: ['https://enokama.jp/wp-content/uploads/2022/04/re_albicocca2.jpg'],                                            website: 'https://albicocca-kamakura.com/' },
+    { id: 'cafe-egao',          name: 'Cafe&Restaurant EGAO',             lat: 35.31159518,       lng: 139.54611193,      address: '鎌倉市由比ガ浜2-21-15', memo: '築約50年。庭園を眺めながら食事。「自家製ベーコンステーキ」が人気',                      images: ['https://www.cafe-restaurant-egao.jp/wp-content/uploads/image1.jpg'],                                          website: 'https://www.cafe-restaurant-egao.jp/' },
+    { id: 'cafe-cyan-kamakura', name: 'CYAN KAMAKURA',                    lat: 35.3230,           lng: 139.5395,          address: '鎌倉市佐助2-23-14',     memo: '築50年。佐助稲荷神社の入口近くの隠れ家。「鎌倉野菜カレー」が名物',                      images: ['https://enokama.jp/wp-content/uploads/2024/12/cyankamakura2.jpg'],                                            website: 'https://www.instagram.com/cyan_kamakura/' },
   ];
 
   // ------------------------------------------------------------
   // デートにおすすめのお洒落なお店・スポット(紫の💕ピンで表示)
   // ------------------------------------------------------------
   const dateSpots = [
-    { id: 'date-gardenhouse',   name: 'GARDEN HOUSE KAMAKURA',   lat: 35.319568,   lng: 139.547862,  address: '鎌倉市御成町15-46',    memo: '緑あふれる庭園レストラン。鎌倉ハム富岡商会とのコラボ料理やクラフトビールが楽しめる、デート・記念日の定番',      image: 'https://enokama.jp/wp-content/uploads/2022/04/re_gardenhouse1.jpg',                            website: 'https://gardenhouse-kamakura.jp/' },
-    { id: 'date-bills',         name: 'bills 七里ヶ浜店',        lat: 35.3055305, lng: 139.5101410, address: '鎌倉市七里ガ浜1-1-1',  memo: '"世界一の朝食"で有名なシドニー発カフェ。2階テラス席から相模湾を一望しながらリコッタパンケーキを',            image: 'https://enokama.jp/wp-content/uploads/2025/03/4_鎌倉-カフェ_bills-七里ヶ浜.jpg',                  website: 'https://bills-jp.net/shop/shonan/' },
-    { id: 'date-pacific',       name: 'Pacific DRIVE-IN',        lat: 35.30442821, lng: 139.51357374, address: '鎌倉市七里ガ浜東2-1-12', memo: '海を見ながらくつろげるハワイアンダイナー。テラス席から江の島・富士山を望むサンセットタイムが人気',            image: 'https://enokama.jp/wp-content/uploads/2025/08/DSCF8921-1536x1024.jpg',                          website: 'http://pacificdrivein.com/' },
-    { id: 'date-sangosho',      name: '珊瑚礁 モアナマカイ店',    lat: 35.30574051, lng: 139.50892899, address: '鎌倉市七里が浜1-3-22',  memo: '鎌倉カレーの代名詞的存在。夕暮れ時にはロマンチックな夕日を眺めながら食事ができる',                          image: 'https://enokama.jp/wp-content/uploads/2022/04/re_EKN2019冬珊瑚礁外観1.jpg',                        website: 'https://sangosho.net/moana/' },
-    { id: 'date-dropin',        name: 'DROP IN',                 lat: 35.305152,  lng: 139.551179,  address: '鎌倉市材木座6-4-24',    memo: '材木座海岸すぐの海カフェ。開放的なテラス席で産地直送フルーツのデザートやランチを',                          image: null,                                                                                             website: 'https://plust-drop.com/' },
-    { id: 'date-namimachi',     name: 'なみまちベーグル',        lat: 35.30965897, lng: 139.53375663, address: '鎌倉市坂ノ下19-12',    memo: '海まで徒歩30秒、築100年超の古民家で作る手作りベーグル。行列のできる隠れ家的な一軒',                        image: 'https://enokama.jp/wp-content/uploads/2021/11/namimachibagel8-1536x1024.jpg',                    website: 'https://namimachi.base.shop/about' },
-    { id: 'date-hotcake',       name: '鎌倉ほっとけーき',        lat: 35.32264097, lng: 139.55316972, address: '鎌倉市雪ノ下1-6-6',     memo: '銅板で1枚ずつ丁寧に焼き上げる、ふわふわ食感のホットケーキ専門店',                                          image: null,                                                                                             website: 'https://www.instagram.com/hotcake_kamakura/' },
-    { id: 'date-shichirigahama', name: '七里ヶ浜海岸(夕日スポット)', lat: 35.3040,   lng: 139.5140,    address: '鎌倉市七里ガ浜',        memo: '日本の渚百選のひとつ。江の島越しに沈む夕日が見えるロマンチックな絶景スポット',                              image: 'https://enokama.jp/wp-content/uploads/2022/04/21autumn_leaflet_shichirigahama-1536x1024.jpg',   website: null },
-    { id: 'date-joujuin',       name: '成就院',                  lat: 35.3090783, lng: 139.5312626, address: '鎌倉市極楽寺1-1-5',    memo: '良縁成就の寺として知られる。108段の石段の参道から由比ヶ浜を一望できる眺望スポット',                        image: 'https://enokama.jp/wp-content/uploads/2021/11/22haru_enokama_leaflet_jojuin-1536x1024.jpg',     website: null },
-    { id: 'date-raitei',        name: '檑亭',                    lat: 35.31647776, lng: 139.51520155, address: '鎌倉市鎌倉山3-1-1', memo: '1万5千坪の廻遊式庭園と富士山・相模湾の絶景。国登録有形文化財の邸宅で味わう会席・そば',                    image: 'https://oniwa.garden/wp-content/uploads/2025/05/01-2-1200x900.jpeg', website: null },
-    { id: 'date-amalfi',        name: 'アマルフィイ デラセーラ', lat: 35.306395, lng: 139.507454, address: '鎌倉市七里ガ浜1-5-10', memo: '七里ヶ浜の高台に立つイタリアン。テラスから相模湾・江の島・富士山を一望できる記念日の名店',              image: 'https://enokama.jp/wp-content/uploads/2021/11/amalfidellasera.jpg', website: 'https://amalfi-dellasera.com/' },
-    { id: 'date-pondichery',    name: 'Pondichery',              lat: 35.322864,  lng: 139.551578,  address: '鎌倉市雪ノ下1-2-3',    memo: 'フレンチ×南インドスパイスの創作料理店。落ち着いた大人の雰囲気でディナーデートに',                          image: null, website: null },
-    { id: 'date-hachinoki',     name: '鉢の木 新館',              lat: 35.33485926, lng: 139.54759924, address: '鎌倉市山ノ内350',     memo: '1964年創業、庭園とせせらぎに包まれた会席料理店。個室も充実し記念日利用に人気',                            image: 'https://enokama.jp/wp-content/uploads/2022/05/鉢の木-新館.jpeg', website: 'https://www.hachinoki.co.jp/' },
-    { id: 'date-pergola',       name: 'ペルゴーラ',              lat: 35.3053036, lng: 139.5319086, address: '鎌倉市坂ノ下33-6 鎌倉パークホテル1F', memo: '海を望むフレンチレストラン。ワインペアリングと共に特別なディナーを',                    image: null, website: 'https://www.kamakuraparkhotel.co.jp/restaurant/pergola.shtml' },
-    { id: 'date-cocomo',        name: 'Ocean Harvest Cocomo',    lat: 35.310356,  lng: 139.538285,  address: '鎌倉市長谷2-8-8 鎌倉コートハウス2F', memo: '由比ヶ浜を一望できるイタリアン。新鮮な牡蠣や魚介料理が評判',                            image: 'https://enokama.jp/wp-content/uploads/2022/01/cocomo_gaikan-1536x1025.jpg', website: 'https://www.kamakura-cocomo.com/' },
-    { id: 'date-splice',        name: 'Splice Kamakura',         lat: 35.3184716, lng: 139.5484840, address: '鎌倉市御成町10-15',    memo: 'タコス×ナチュラルワインの隠れ家。御成町の路地裏にある大人のデートスポット',                              image: null, website: 'https://splicekamakura.com/' },
+    { id: 'date-gardenhouse',   name: 'GARDEN HOUSE KAMAKURA',   lat: 35.319568,   lng: 139.547862,  address: '鎌倉市御成町15-46',    memo: '緑あふれる庭園レストラン。鎌倉ハム富岡商会とのコラボ料理やクラフトビールが楽しめる、デート・記念日の定番',      images: ['https://enokama.jp/wp-content/uploads/2022/04/re_gardenhouse1.jpg'],                            website: 'https://gardenhouse-kamakura.jp/' },
+    { id: 'date-bills',         name: 'bills 七里ヶ浜店',        lat: 35.3055305, lng: 139.5101410, address: '鎌倉市七里ガ浜1-1-1',  memo: '"世界一の朝食"で有名なシドニー発カフェ。2階テラス席から相模湾を一望しながらリコッタパンケーキを',            images: ['https://enokama.jp/wp-content/uploads/2025/03/4_鎌倉-カフェ_bills-七里ヶ浜.jpg'],                  website: 'https://bills-jp.net/shop/shonan/' },
+    { id: 'date-pacific',       name: 'Pacific DRIVE-IN',        lat: 35.30442821, lng: 139.51357374, address: '鎌倉市七里ガ浜東2-1-12', memo: '海を見ながらくつろげるハワイアンダイナー。テラス席から江の島・富士山を望むサンセットタイムが人気',            images: ['https://enokama.jp/wp-content/uploads/2025/08/DSCF8921-1536x1024.jpg'],                          website: 'http://pacificdrivein.com/' },
+    { id: 'date-sangosho',      name: '珊瑚礁 モアナマカイ店',    lat: 35.30574051, lng: 139.50892899, address: '鎌倉市七里が浜1-3-22',  memo: '鎌倉カレーの代名詞的存在。夕暮れ時にはロマンチックな夕日を眺めながら食事ができる',                          images: ['https://enokama.jp/wp-content/uploads/2022/04/re_EKN2019冬珊瑚礁外観1.jpg'],                        website: 'https://sangosho.net/moana/' },
+    { id: 'date-dropin',        name: 'DROP IN',                 lat: 35.305152,  lng: 139.551179,  address: '鎌倉市材木座6-4-24',    memo: '材木座海岸すぐの海カフェ。開放的なテラス席で産地直送フルーツのデザートやランチを',                          images: [],                                                                                             website: 'https://plust-drop.com/' },
+    { id: 'date-namimachi',     name: 'なみまちベーグル',        lat: 35.30965897, lng: 139.53375663, address: '鎌倉市坂ノ下19-12',    memo: '海まで徒歩30秒、築100年超の古民家で作る手作りベーグル。行列のできる隠れ家的な一軒',                        images: ['https://enokama.jp/wp-content/uploads/2021/11/namimachibagel8-1536x1024.jpg'],                    website: 'https://namimachi.base.shop/about' },
+    { id: 'date-hotcake',       name: '鎌倉ほっとけーき',        lat: 35.32264097, lng: 139.55316972, address: '鎌倉市雪ノ下1-6-6',     memo: '銅板で1枚ずつ丁寧に焼き上げる、ふわふわ食感のホットケーキ専門店',                                          images: [],                                                                                             website: 'https://www.instagram.com/hotcake_kamakura/' },
+    { id: 'date-shichirigahama', name: '七里ヶ浜海岸(夕日スポット)', lat: 35.3040,   lng: 139.5140,    address: '鎌倉市七里ガ浜',        memo: '日本の渚百選のひとつ。江の島越しに沈む夕日が見えるロマンチックな絶景スポット',                              images: ['https://enokama.jp/wp-content/uploads/2022/04/21autumn_leaflet_shichirigahama-1536x1024.jpg'],   website: null },
+    { id: 'date-joujuin',       name: '成就院',                  lat: 35.3090783, lng: 139.5312626, address: '鎌倉市極楽寺1-1-5',    memo: '良縁成就の寺として知られる。108段の石段の参道から由比ヶ浜を一望できる眺望スポット',                        images: ['https://enokama.jp/wp-content/uploads/2021/11/22haru_enokama_leaflet_jojuin-1536x1024.jpg'],     website: null },
+    { id: 'date-raitei',        name: '檑亭',                    lat: 35.31647776, lng: 139.51520155, address: '鎌倉市鎌倉山3-1-1', memo: '1万5千坪の廻遊式庭園と富士山・相模湾の絶景。国登録有形文化財の邸宅で味わう会席・そば',                    images: ['https://oniwa.garden/wp-content/uploads/2025/05/01-2-1200x900.jpeg'], website: null },
+    { id: 'date-amalfi',        name: 'アマルフィイ デラセーラ', lat: 35.306395, lng: 139.507454, address: '鎌倉市七里ガ浜1-5-10', memo: '七里ヶ浜の高台に立つイタリアン。テラスから相模湾・江の島・富士山を一望できる記念日の名店',              images: ['https://enokama.jp/wp-content/uploads/2021/11/amalfidellasera.jpg'], website: 'https://amalfi-dellasera.com/' },
+    { id: 'date-pondichery',    name: 'Pondichery',              lat: 35.322864,  lng: 139.551578,  address: '鎌倉市雪ノ下1-2-3',    memo: 'フレンチ×南インドスパイスの創作料理店。落ち着いた大人の雰囲気でディナーデートに',                          images: [], website: null },
+    { id: 'date-hachinoki',     name: '鉢の木 新館',              lat: 35.33485926, lng: 139.54759924, address: '鎌倉市山ノ内350',     memo: '1964年創業、庭園とせせらぎに包まれた会席料理店。個室も充実し記念日利用に人気',                            images: ['https://enokama.jp/wp-content/uploads/2022/05/鉢の木-新館.jpeg'], website: 'https://www.hachinoki.co.jp/' },
+    { id: 'date-pergola',       name: 'ペルゴーラ',              lat: 35.3053036, lng: 139.5319086, address: '鎌倉市坂ノ下33-6 鎌倉パークホテル1F', memo: '海を望むフレンチレストラン。ワインペアリングと共に特別なディナーを',                    images: [], website: 'https://www.kamakuraparkhotel.co.jp/restaurant/pergola.shtml' },
+    { id: 'date-cocomo',        name: 'Ocean Harvest Cocomo',    lat: 35.310356,  lng: 139.538285,  address: '鎌倉市長谷2-8-8 鎌倉コートハウス2F', memo: '由比ヶ浜を一望できるイタリアン。新鮮な牡蠣や魚介料理が評判',                            images: ['https://enokama.jp/wp-content/uploads/2022/01/cocomo_gaikan-1536x1025.jpg'], website: 'https://www.kamakura-cocomo.com/' },
+    { id: 'date-splice',        name: 'Splice Kamakura',         lat: 35.318118, lng: 139.548901, address: '鎌倉市御成町10-15',    memo: 'タコス×ナチュラルワインの隠れ家。御成町の路地裏にある大人のデートスポット',                              images: [], website: 'https://splicekamakura.com/' },
   ];
 
   // ------------------------------------------------------------
@@ -889,16 +1020,16 @@
   // 観光客向けガイドにはあまり出てこない、大町・材木座エリアを中心にした地元で評判の店
   // ------------------------------------------------------------
   const insiderSpots = [
-    { id: 'insider-2ndfloor',    name: '2ND FLOOR by A&S',       lat: 35.3043768, lng: 139.5535309, address: '鎌倉市材木座6-3-29 2F', memo: 'イタリアン出身シェフが鎌倉野菜とスパイスを組み合わせる、旬の食材と料理の店。材木座海岸を望む2階のダイニングでナチュラルワインも',   image: null, website: 'https://arts-science.com/shop/2nd-floor/' },
-    { id: 'insider-hcafe',       name: '+h café kamakura',       lat: 35.3122029, lng: 139.5596853, address: '鎌倉市大町4-8-29',     memo: '妙法寺裏の森にたたずむ隠れ家カフェ。建築家の店主とパリ仕込みのシェフによるフレンチ×オリエンタルの創作ランチ',                        image: 'https://enokama.jp/wp-content/uploads/2024/09/1600px-top横長内観-1536x866.jpg', website: 'https://www.lestyleh.com/kamakura' },
-    { id: 'insider-millcoffee',  name: 'ミルコーヒー&スタンド',  lat: 35.30597379, lng: 139.55150452, address: '鎌倉市材木座5-14-18', memo: '朝8時から開く古民家カフェ。米粉を使った自家製スイーツと丁寧に淹れるコーヒーが地元で評判',                                            image: 'https://enokama.jp/wp-content/uploads/2024/12/millcoffee005.jpg', website: 'https://www.instagram.com/millcoffeestand/' },
-    { id: 'insider-tsukitomatsu', name: 'からすみ蕎麦 月と松',   lat: 35.307908,  lng: 139.549011,  address: '鎌倉市材木座5-10-50', memo: '昭和6年築の日本家屋と庭園で味わう、幻のからすみをたっぷりのせた蕎麦',                                                            image: 'https://enokama.jp/wp-content/uploads/2024/04/tsukitomatsu1-1024x683.jpg', website: 'https://whaves.co.jp/tsukitomatsu/' },
-    { id: 'insider-acote',       name: 'À côté zaimokuza',       lat: 35.30789025, lng: 139.55133127, address: '鎌倉市材木座3-13-17', memo: '知る人ぞ知るフレンチビストロ&パティスリー。季節限定パフェと焼き菓子が評判',                                                     image: 'https://enokama.jp/wp-content/uploads/2024/07/2024秋_昼_アコテ材木座_軽量-1024x683.jpg', website: 'https://zaimokuza-shotenkai.com/shop/acote/' },
-    { id: 'insider-kirara',      name: '茶房 雲母(きらら)',      lat: 35.32186339, lng: 139.5466162, address: '鎌倉市御成町16-7',    memo: '注文を受けてから茹でる白玉が名物。行列必至の人気甘味処',                                                                          image: null, website: null },
-    { id: 'insider-parlor-yamada', name: 'パーラー山田(旧Rich Life)', lat: 35.3046, lng: 139.5533, address: '鎌倉市材木座6-4-4',  memo: '和田塚駅すぐの隠れ家イタリアン&カフェ。自家製レモンスカッシュと落ち着いた空間が魅力',                                              image: null, website: 'https://www.instagram.com/parlor_yamada/' },
-    { id: 'insider-dolcefarniente', name: 'Dolce far niente',    lat: 35.3215, lng: 139.5510, address: '鎌倉市雪ノ下1-5-34 2F', memo: '鎌倉野菜を使ったイタリアンバール。1日15~20食限定の鎌倉野菜ランチプレートが評判', image: 'https://enokama.jp/wp-content/uploads/2021/11/dolcefarniente1.jpg', website: null },
-    { id: 'insider-kakan',       name: 'かかん 鎌倉本店',        lat: 35.320067038071, lng: 139.54919157973, address: '鎌倉市御成町13-12', memo: '地元で愛される町中華の名店。麻婆豆腐が看板メニューで行列必至', image: 'https://enokama.jp/wp-content/uploads/2022/09/zitu_TK2_7084_CMYK_1005web.jpg', website: null },
-    { id: 'insider-plusouple',   name: 'PLUSOUPLE 鎌倉店',       lat: 35.3198, lng: 139.5487, address: '鎌倉市御成町14-1 御成ビル1F', memo: 'Pascoが手がけるパンとスープの専門店。地元で評判の朝食セットも', image: null, website: 'https://plusouple.jp/' },
+    { id: 'insider-2ndfloor',    name: '2ND FLOOR by A&S',       lat: 35.3043768, lng: 139.5535309, address: '鎌倉市材木座6-3-29 2F', memo: 'イタリアン出身シェフが鎌倉野菜とスパイスを組み合わせる、旬の食材と料理の店。材木座海岸を望む2階のダイニングでナチュラルワインも',   images: [], website: 'https://arts-science.com/shop/2nd-floor/' },
+    { id: 'insider-hcafe',       name: '+h café kamakura',       lat: 35.3122029, lng: 139.5596853, address: '鎌倉市大町4-8-29',     memo: '妙法寺裏の森にたたずむ隠れ家カフェ。建築家の店主とパリ仕込みのシェフによるフレンチ×オリエンタルの創作ランチ',                        images: ['https://enokama.jp/wp-content/uploads/2024/09/1600px-top横長内観-1536x866.jpg'], website: 'https://www.lestyleh.com/kamakura' },
+    { id: 'insider-millcoffee',  name: 'ミルコーヒー&スタンド',  lat: 35.30597379, lng: 139.55150452, address: '鎌倉市材木座5-14-18', memo: '朝8時から開く古民家カフェ。米粉を使った自家製スイーツと丁寧に淹れるコーヒーが地元で評判',                                            images: ['https://enokama.jp/wp-content/uploads/2024/12/millcoffee005.jpg'], website: 'https://www.instagram.com/millcoffeestand/' },
+    { id: 'insider-tsukitomatsu', name: 'からすみ蕎麦 月と松',   lat: 35.307908,  lng: 139.549011,  address: '鎌倉市材木座5-10-50', memo: '昭和6年築の日本家屋と庭園で味わう、幻のからすみをたっぷりのせた蕎麦',                                                            images: ['https://enokama.jp/wp-content/uploads/2024/04/tsukitomatsu1-1024x683.jpg'], website: 'https://whaves.co.jp/tsukitomatsu/' },
+    { id: 'insider-acote',       name: 'À côté zaimokuza',       lat: 35.30789025, lng: 139.55133127, address: '鎌倉市材木座3-13-17', memo: '知る人ぞ知るフレンチビストロ&パティスリー。季節限定パフェと焼き菓子が評判',                                                     images: ['https://enokama.jp/wp-content/uploads/2024/07/2024秋_昼_アコテ材木座_軽量-1024x683.jpg'], website: 'https://zaimokuza-shotenkai.com/shop/acote/' },
+    { id: 'insider-kirara',      name: '茶房 雲母(きらら)',      lat: 35.32186339, lng: 139.5466162, address: '鎌倉市御成町16-7',    memo: '注文を受けてから茹でる白玉が名物。行列必至の人気甘味処',                                                                          images: [], website: null },
+    { id: 'insider-parlor-yamada', name: 'パーラー山田(旧Rich Life)', lat: 35.3044, lng: 139.5535, address: '鎌倉市材木座6-4-4',  memo: '材木座海岸近くの隠れ家イタリアン&カフェ(和田塚駅から徒歩約20分)。自家製レモンスカッシュと落ち着いた空間が魅力',                                              images: [], website: 'https://www.instagram.com/parlor_yamada/' },
+    { id: 'insider-dolcefarniente', name: 'Dolce far niente',    lat: 35.322798, lng: 139.552883, address: '鎌倉市雪ノ下1-5-34 2F', memo: '鎌倉野菜を使ったイタリアンバール。1日15~20食限定の鎌倉野菜ランチプレートが評判', images: ['https://enokama.jp/wp-content/uploads/2021/11/dolcefarniente1.jpg'], website: null },
+    { id: 'insider-kakan',       name: 'かかん 鎌倉本店',        lat: 35.320067038071, lng: 139.54919157973, address: '鎌倉市御成町13-12', memo: '地元で愛される町中華の名店。麻婆豆腐が看板メニューで行列必至', images: ['https://enokama.jp/wp-content/uploads/2022/09/zitu_TK2_7084_CMYK_1005web.jpg'], website: null },
+    { id: 'insider-plusouple',   name: 'PLUSOUPLE 鎌倉店',       lat: 35.319933, lng: 139.548813, address: '鎌倉市御成町14-1 御成ビル1F', memo: 'Pascoが手がけるパンとスープの専門店。地元で評判の朝食セットも', images: [], website: 'https://plusouple.jp/' },
   ];
 
   // ------------------------------------------------------------
@@ -906,13 +1037,13 @@
   // 明治・昭和創業の老舗が中心。定番のお土産・名物を扱う店
   // ------------------------------------------------------------
   const classicSpots = [
-    { id: 'classic-toshimaya',   name: '豊島屋 本店',            lat: 35.3204607,  lng: 139.55256171, address: '鎌倉市小町2-11-19', memo: '明治28年創業。鎌倉銘菓「鳩サブレー」の元祖。本店限定の鳩グッズも', image: 'https://enokama.jp/wp-content/uploads/2021/11/toshimaya1.jpg', website: 'https://www.hato.co.jp/' },
-    { id: 'classic-kamakuragoro', name: '鎌倉五郎本店',           lat: 35.32053709, lng: 139.55191983, address: '鎌倉市小町2-9-2',   memo: '月うさぎのデザインが目印の「鎌倉半月」。ゴーフレット生地と軽やかなクリームが人気', image: 'https://www.kamakuragoro.co.jp/img/photo_main_otsukimi2609.png', website: 'https://www.kamakuragoro.co.jp/' },
-    { id: 'classic-kosuzu',      name: '段葛 こ寿々',            lat: 35.32152749, lng: 139.55399324, address: '鎌倉市小町2-13-4',  memo: '本わらび粉を使った銅鍋練り上げのわらび餅と手打ちそばの名店', image: null, website: null },
-    { id: 'classic-beniya',      name: '鎌倉紅谷 八幡宮前本店',  lat: 35.3232265,  lng: 139.5548626,  address: '鎌倉市雪ノ下1-12-4', memo: '1954年創業。自家製キャラメルとクルミの「クルミッ子」が看板商品', image: null, website: 'https://beniya-ajisai.co.jp/' },
-    { id: 'classic-witch',       name: '鎌倉ウィッチ',           lat: 35.3184716,  lng: 139.5484840,  address: '鎌倉市御成町8-1',   memo: 'ラムレーズンとバタークリームをサブレでサンドした「鎌倉ウィッチ」が名物', image: 'https://enokama.jp/wp-content/uploads/2025/08/⑥店内写真.jpg', website: null },
-    { id: 'classic-mameya',      name: '鎌倉まめや 小町通り店',  lat: 35.3223538,  lng: 139.55264977, address: '鎌倉市雪ノ下1-5-38', memo: '1952年創業の豆菓子専門店。70種類以上の豆から選べる食べ比べが人気', image: null, website: null },
-    { id: 'classic-inoue',       name: '井上蒲鉾店 鎌倉駅前店',  lat: 35.3193,     lng: 139.5504,      address: '鎌倉市小町1-4-4',   memo: '1931年創業。無添加にこだわった「梅花はんぺん」が名物のかまぼこ店', image: 'https://enokama.jp/wp-content/uploads/2022/04/inouekamaboko_kamakuraekimae2-1536x1092.jpg', website: 'https://www.inouekamaboko.co.jp/' },
+    { id: 'classic-toshimaya',   name: '豊島屋 本店',            lat: 35.3204607,  lng: 139.55256171, address: '鎌倉市小町2-11-19', memo: '明治28年創業。鎌倉銘菓「鳩サブレー」の元祖。本店限定の鳩グッズも', images: ['https://enokama.jp/wp-content/uploads/2021/11/toshimaya1.jpg'], website: 'https://www.hato.co.jp/' },
+    { id: 'classic-kamakuragoro', name: '鎌倉五郎本店',           lat: 35.32053709, lng: 139.55191983, address: '鎌倉市小町2-9-2',   memo: '月うさぎのデザインが目印の「鎌倉半月」。ゴーフレット生地と軽やかなクリームが人気', images: ['https://www.kamakuragoro.co.jp/img/photo_main_otsukimi2609.png'], website: 'https://www.kamakuragoro.co.jp/' },
+    { id: 'classic-kosuzu',      name: '段葛 こ寿々',            lat: 35.32152749, lng: 139.55399324, address: '鎌倉市小町2-13-4',  memo: '本わらび粉を使った銅鍋練り上げのわらび餅と手打ちそばの名店', images: [], website: null },
+    { id: 'classic-beniya',      name: '鎌倉紅谷 八幡宮前本店',  lat: 35.3232265,  lng: 139.5548626,  address: '鎌倉市雪ノ下1-12-4', memo: '1954年創業。自家製キャラメルとクルミの「クルミッ子」が看板商品', images: [], website: 'https://beniya-ajisai.co.jp/' },
+    { id: 'classic-witch',       name: '鎌倉ウィッチ',           lat: 35.3184,  lng: 139.5492,  address: '鎌倉市御成町8-1',   memo: 'ラムレーズンとバタークリームをサブレでサンドした「鎌倉ウィッチ」が名物', images: ['https://enokama.jp/wp-content/uploads/2025/08/⑥店内写真.jpg'], website: null },
+    { id: 'classic-mameya',      name: '鎌倉まめや 小町通り店',  lat: 35.3223538,  lng: 139.55264977, address: '鎌倉市雪ノ下1-5-38', memo: '1952年創業の豆菓子専門店。70種類以上の豆から選べる食べ比べが人気', images: [], website: null },
+    { id: 'classic-inoue',       name: '井上蒲鉾店 鎌倉駅前店',  lat: 35.3193,     lng: 139.5504,      address: '鎌倉市小町1-4-4',   memo: '1931年創業。無添加にこだわった「梅花はんぺん」が名物のかまぼこ店', images: ['https://enokama.jp/wp-content/uploads/2022/04/inouekamaboko_kamakuraekimae2-1536x1092.jpg'], website: 'https://www.inouekamaboko.co.jp/' },
   ];
 
   // ------------------------------------------------------------
@@ -1067,6 +1198,56 @@
       .replace(/"/g, '&quot;');
   }
 
+  // スポットごとの「今何枚目を表示中か」を覚えておく(ポップアップを開き直しても位置を保持)
+  const carouselIndex = {};
+
+  // 画像が複数枚あればスライド式のカルーセル、1枚ならシンプルな画像、0枚なら何も出さない
+  function carouselHtml(spot) {
+    const images = spot.images || [];
+    if (images.length === 0) return '';
+    if (images.length === 1) {
+      return `<img class="popup-image" src="${images[0]}" alt="${escapeHtml(spot.name)}">`;
+    }
+    const idx = ((carouselIndex[spot.id] || 0) % images.length + images.length) % images.length;
+    const dots = images.map((_, i) => `<button type="button" class="carousel-dot${i === idx ? ' active' : ''}" data-carousel-id="${spot.id}" data-carousel-index="${i}" aria-label="${i + 1}枚目"></button>`).join('');
+    return `
+      <div class="popup-carousel" data-carousel-id="${spot.id}">
+        <img class="popup-image" src="${images[idx]}" alt="${escapeHtml(spot.name)} (${idx + 1}/${images.length})">
+        <button type="button" class="carousel-arrow carousel-prev" data-carousel-id="${spot.id}" data-carousel-dir="-1" aria-label="前の画像">&#8249;</button>
+        <button type="button" class="carousel-arrow carousel-next" data-carousel-id="${spot.id}" data-carousel-dir="1" aria-label="次の画像">&#8250;</button>
+        <div class="carousel-dots">${dots}</div>
+      </div>`;
+  }
+
+  // カルーセルの矢印/ドットのクリックを受けて、該当スポットの画像だけを差し替える
+  function handleCarouselClick(target, e) {
+    const wrap = target.closest('[data-carousel-id]');
+    if (!wrap) return false;
+    const id = wrap.dataset.carouselId;
+    const spot = allSpotsFlat.find(s => s.id === id);
+    if (!spot) return false;
+    const images = spot.images || [];
+    if (images.length === 0) return false;
+
+    const dirBtn = target.closest('.carousel-arrow');
+    const dotBtn = target.closest('.carousel-dot');
+    if (dirBtn) {
+      e.preventDefault();
+      const dir = parseInt(dirBtn.dataset.carouselDir, 10);
+      carouselIndex[id] = ((carouselIndex[id] || 0) + dir + images.length) % images.length;
+    } else if (dotBtn) {
+      e.preventDefault();
+      carouselIndex[id] = parseInt(dotBtn.dataset.carouselIndex, 10);
+    } else {
+      return false;
+    }
+    const carouselEl = target.closest('.popup-carousel');
+    if (carouselEl) {
+      carouselEl.outerHTML = carouselHtml(spot);
+    }
+    return true;
+  }
+
   // 写真ファイルを読み込み、長辺500pxに縮小してJPEGデータURLとして返す(localStorage容量対策)
   function readAndCompressImage(file, callback) {
     const reader = new FileReader();
@@ -1139,16 +1320,23 @@
   const map = L.map('map').setView(kamakuraStation, 14);
 
   // ------------------------------------------------------------
-  // 地図タイルの見た目切り替え(標準 / 淡色 / 航空写真)
+  // 地図タイルの見た目切り替え(おしゃれ地図 / 標準 / 地形図 / 航空写真)
+  // 注: CARTOのタイル(Voyager/Positronとも)は現在APIキーが必須になり透かし表示になるため、
+  // キー不要で使えるEsriの無料ベースマップを「おしゃれ地図」として採用しデフォルトにしている
   // ------------------------------------------------------------
+  const chicTiles = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
+    maxZoom: 19,
+    attribution: 'Tiles &copy; Esri &mdash; Source: Esri, HERE, Garmin, FAO, NOAA, USGS'
+  }).addTo(map);
+
   const standardTiles = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19,
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-  }).addTo(map);
+  });
 
-  const paleTiles = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+  const topoTiles = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
     maxZoom: 19,
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+    attribution: 'Tiles &copy; Esri &mdash; Source: Esri, HERE, Garmin, USGS, Intermap'
   });
 
   const satelliteTiles = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
@@ -1157,8 +1345,9 @@
   });
 
   L.control.layers({
+    'おしゃれ地図': chicTiles,
     '標準地図': standardTiles,
-    '淡色地図': paleTiles,
+    '地形図': topoTiles,
     '航空写真': satelliteTiles,
   }, null, { position: 'bottomleft', collapsed: true }).addTo(map);
 
@@ -1253,7 +1442,7 @@
 
     const popupHtml = () => `
       <div>
-        ${spot.image ? `<img class="popup-image" src="${spot.image}" alt="${spot.name}">` : ''}
+        ${carouselHtml(spot)}
         <span class="popup-category" style="background:${color};">${spot.category}</span>
         <button class="favorite-toggle-btn" data-id="${spot.id}" type="button">${isFavorite(spot.id) ? '⭐' : '☆'}</button>
         <div><strong>${spot.name}</strong></div>
@@ -1287,7 +1476,7 @@
 
     const popupHtml = () => `
       <div>
-        ${spot.image ? `<img class="popup-image" src="${spot.image}" alt="${spot.name}">` : ''}
+        ${carouselHtml(spot)}
         <span class="popup-category" style="background:#d6336c;">最後から二番目の恋</span>
         <button class="favorite-toggle-btn" data-id="${spot.id}" type="button">${isFavorite(spot.id) ? '⭐' : '☆'}</button>
         <div><strong>${spot.name}</strong></div>
@@ -1321,7 +1510,7 @@
 
     const popupHtml = () => `
       <div>
-        ${spot.image ? `<img class="popup-image" src="${spot.image}" alt="${spot.name}">` : ''}
+        ${carouselHtml(spot)}
         <span class="popup-category" style="background:#16a085;">続・最後から二番目の恋</span>
         <button class="favorite-toggle-btn" data-id="${spot.id}" type="button">${isFavorite(spot.id) ? '⭐' : '☆'}</button>
         <div><strong>${spot.name}</strong></div>
@@ -1359,7 +1548,7 @@
 
     const popupHtml = () => `
       <div>
-        ${spot.image ? `<img class="popup-image" src="${spot.image}" alt="${spot.name}">` : ''}
+        ${carouselHtml(spot)}
         <span class="popup-category" style="background:#8b5e34;">古民家カフェ</span>
         <button class="favorite-toggle-btn" data-id="${spot.id}" type="button">${isFavorite(spot.id) ? '⭐' : '☆'}</button>
         <div><strong>${spot.name}</strong></div>
@@ -1401,7 +1590,7 @@
 
     const popupHtml = () => `
       <div>
-        ${spot.image ? `<img class="popup-image" src="${spot.image}" alt="${spot.name}">` : ''}
+        ${carouselHtml(spot)}
         <span class="popup-category" style="background:#8e44ad;">デートスポット</span>
         <button class="favorite-toggle-btn" data-id="${spot.id}" type="button">${isFavorite(spot.id) ? '⭐' : '☆'}</button>
         <div><strong>${spot.name}</strong></div>
@@ -1443,7 +1632,7 @@
 
     const popupHtml = () => `
       <div>
-        ${spot.image ? `<img class="popup-image" src="${spot.image}" alt="${spot.name}">` : ''}
+        ${carouselHtml(spot)}
         <span class="popup-category" style="background:#2c3e50;">鎌倉通のこだわり店</span>
         <button class="favorite-toggle-btn" data-id="${spot.id}" type="button">${isFavorite(spot.id) ? '⭐' : '☆'}</button>
         <div><strong>${spot.name}</strong></div>
@@ -1485,7 +1674,7 @@
 
     const popupHtml = () => `
       <div>
-        ${spot.image ? `<img class="popup-image" src="${spot.image}" alt="${spot.name}">` : ''}
+        ${carouselHtml(spot)}
         <span class="popup-category" style="background:#a1424a;">王道のお店</span>
         <button class="favorite-toggle-btn" data-id="${spot.id}" type="button">${isFavorite(spot.id) ? '⭐' : '☆'}</button>
         <div><strong>${spot.name}</strong></div>
@@ -1519,6 +1708,9 @@
   }
 
   map.getContainer().addEventListener('click', (e) => {
+    // カルーセルの矢印/ドット操作
+    if (handleCarouselClick(e.target, e)) return;
+
     // 訪問済みとして記録する
     const submitBtn = e.target.closest('.visit-submit-btn');
     if (submitBtn) {
@@ -1601,6 +1793,29 @@
     }
   });
 
+  // カルーセル画像のスワイプ操作(スマホでの左右フリック)
+  let carouselTouchStartX = null;
+  map.getContainer().addEventListener('touchstart', (e) => {
+    if (!e.target.closest('.popup-carousel')) return;
+    carouselTouchStartX = e.changedTouches[0].clientX;
+  }, { passive: true });
+  map.getContainer().addEventListener('touchend', (e) => {
+    if (carouselTouchStartX === null) return;
+    const wrap = e.target.closest('.popup-carousel');
+    if (!wrap) { carouselTouchStartX = null; return; }
+    const deltaX = e.changedTouches[0].clientX - carouselTouchStartX;
+    carouselTouchStartX = null;
+    if (Math.abs(deltaX) < 40) return;
+    const id = wrap.dataset.carouselId;
+    const spot = allSpotsFlat.find(s => s.id === id);
+    if (!spot) return;
+    const images = spot.images || [];
+    if (images.length === 0) return;
+    const dir = deltaX < 0 ? 1 : -1;
+    carouselIndex[id] = ((carouselIndex[id] || 0) + dir + images.length) % images.length;
+    wrap.outerHTML = carouselHtml(spot);
+  }, { passive: true });
+
   // サイドバーはmap要素の外側にあるため、専用のリスナーでクリックを処理する
   document.getElementById('sidebar-list').addEventListener('click', (e) => {
     const sidebarItem = e.target.closest('.sidebar-item');
@@ -1634,15 +1849,26 @@
       return `<label><input type="checkbox" data-group="${key}"> ${g.swatchHtml}${g.label}</label>`;
     }).join('');
 
-    div.innerHTML = rows
+    div.innerHTML = `<div class="map-legend-header"><span>🗺 凡例</span><span class="map-legend-toggle-icon">▼</span></div>`
+      + `<div class="map-legend-body">`
+      + rows
       + `<label class="unvisited-toggle"><input type="checkbox" id="unvisited-only-toggle"> 🔍 未訪問のみ表示</label>`
       + `<label class="unvisited-toggle"><input type="checkbox" id="favorites-only-toggle"> ⭐ お気に入りのみ表示</label>`
       + `<div class="visited-count" id="visited-count-text"></div>`
-      + `<div class="progress-bar-track overall-progress"><div class="progress-bar-fill" id="overall-progress-fill" style="width:0%"></div></div>`;
+      + `<div class="progress-bar-track overall-progress"><div class="progress-bar-fill" id="overall-progress-fill" style="width:0%"></div></div>`
+      + `</div>`;
 
     // 地図の下にあるコントロールをクリックしても地図がパン/ズームしないようにする
     L.DomEvent.disableClickPropagation(div);
     L.DomEvent.disableScrollPropagation(div);
+
+    // ヘッダーをタップ/クリックすると開閉する。画面の狭い端末(スマホ)では最初から折りたたんでおく
+    if (window.innerWidth <= 600) {
+      div.classList.add('collapsed');
+    }
+    div.querySelector('.map-legend-header').addEventListener('click', () => {
+      div.classList.toggle('collapsed');
+    });
 
     // カテゴリごとの表示/非表示チェックボックス(data-group属性を持つものだけが対象)
     div.querySelectorAll('input[data-group]').forEach(checkbox => {
@@ -1803,6 +2029,112 @@
   const aiSubmitBtn = document.getElementById('ai-submit-btn');
   const aiStatusArea = document.getElementById('ai-status-area');
   const aiResultArea = document.getElementById('ai-result-area');
+
+  // ------------------------------------------------------------
+  // 📋 定番ルートプリセット(カテゴリごとの、あらかじめ用意した鉄板コース)
+  // ------------------------------------------------------------
+  const presetRoutes = [
+    {
+      id: 'preset-classic', title: '定番観光コース', subtitle: '初めての鎌倉に。八幡宮から大仏へ', color: '#c0392b',
+      stops: [
+        { id: 'spot-station', reason: '出発点。江ノ電と横須賀線が交わる鎌倉の玄関口' },
+        { id: 'spot-tsurugaoka', reason: '鎌倉のシンボル的な神社。まずはここからお参り' },
+        { id: 'spot-zeniarai', reason: '洞窟の中でお金を洗うと増えると言われる名所' },
+        { id: 'spot-kotokuin', reason: '国宝の鎌倉大仏。長谷エリアの代名詞' },
+        { id: 'spot-hasedera', reason: '眺望のよい花のお寺。相模湾を一望' },
+        { id: 'spot-yuigahama', reason: '海を眺めて、散策の締めくくりに' },
+      ],
+    },
+    {
+      id: 'preset-kitakamakura', title: '北鎌倉 花めぐり', subtitle: '禅寺と四季の花をめぐる静かな散歩', color: '#27ae60',
+      stops: [
+        { id: 'spot-engakuji', reason: '北鎌倉駅すぐの禅寺。まずはここから' },
+        { id: 'spot-tokeiji', reason: '"縁切り寺"として知られる、梅や花菖蒲の名所' },
+        { id: 'spot-jochiji', reason: '鎌倉五山第四位。趣のある鐘楼門' },
+        { id: 'spot-meigetsuin', reason: 'あじさい寺として有名な花の名所' },
+        { id: 'spot-kenchoji', reason: '鎌倉五山第一位。散策の締めくくりに' },
+      ],
+    },
+    {
+      id: 'preset-drama1', title: '「最後から二番目の恋」巡り', subtitle: '極楽寺・坂ノ下のロケ地をめぐる', color: '#d6336c',
+      stops: [
+        { id: 'drama-gokurakuji-station', reason: 'シリーズ通しての"起点"となる江ノ電の駅' },
+        { id: 'drama-goryo-jinja', reason: '和平が江ノ電の踏切を渡って帰宅する道' },
+        { id: 'drama-capio', reason: '「長倉家」の外観ロケ地。今はシチリア料理店' },
+        { id: 'drama-chikaramochiya', reason: '千明が立ち寄った創業300年以上の和菓子店' },
+        { id: 'drama-sacanosita', reason: '「カフェナガクラ」の内観ロケ地。カフェで一休み' },
+        { id: 'drama-inamuragasaki-park', reason: '海辺のシーンの象徴。夕日で締めくくり' },
+      ],
+    },
+    {
+      id: 'preset-drama2', title: '「続・最後から二番目の恋」巡り', subtitle: '鎌倉駅周辺の続編ロケ地', color: '#16a085',
+      stops: [
+        { id: 'sequel-renbai', reason: '地元の朝市。買い物シーンで登場' },
+        { id: 'sequel-yuigahama-park', reason: '出会いのシーンで使われた海浜公園' },
+        { id: 'sequel-gokurakujizaka', reason: '中井貴一と小泉今日子が出会う坂道' },
+      ],
+    },
+    {
+      id: 'preset-date', title: 'デート王道コース', subtitle: '七里ヶ浜でサンセットデート', color: '#8e44ad',
+      stops: [
+        { id: 'date-bills', reason: '"世界一の朝食"の店。まずはここでランチ' },
+        { id: 'date-pacific', reason: '海を見ながらくつろげるハワイアンダイナー' },
+        { id: 'date-sangosho', reason: '夕暮れ時にロマンチックな鎌倉カレーの名店' },
+        { id: 'date-shichirigahama', reason: '江の島越しの夕日で一日を締めくくる' },
+      ],
+    },
+    {
+      id: 'preset-cafe', title: '古民家カフェ巡り', subtitle: '坂ノ下・長谷の隠れ家カフェ', color: '#8b5e34',
+      stops: [
+        { id: 'cafe-sacanosita', reason: 'ドラマロケ地としても有名な古民家カフェ' },
+        { id: 'cafe-paso', reason: 'すぐ近くのスペシャルティコーヒー専門店' },
+        { id: 'cafe-with-kamakura', reason: '築200年以上の合掌造り古民家' },
+        { id: 'cafe-plough', reason: '竹林の庭園が印象的な古民家カフェ' },
+        { id: 'cafe-kitahashi', reason: '大正時代の建築で味わう手打ちそば' },
+      ],
+    },
+    {
+      id: 'preset-insider', title: '鎌倉通のグルメ巡り', subtitle: '材木座・大町の地元で評判の店', color: '#2c3e50',
+      stops: [
+        { id: 'insider-millcoffee', reason: '朝8時から開く古民家カフェ' },
+        { id: 'insider-tsukitomatsu', reason: '幻のからすみをのせた蕎麦の名店' },
+        { id: 'insider-acote', reason: '知る人ぞ知るフレンチビストロ&パティスリー' },
+        { id: 'insider-2ndfloor', reason: '材木座海岸を望むダイニングでナチュラルワインを' },
+        { id: 'insider-parlor-yamada', reason: '材木座海岸近くの隠れ家イタリアンで締めくくり' },
+      ],
+    },
+    {
+      id: 'preset-souvenir', title: '王道みやげ巡り', subtitle: '小町通り〜若宮大路の老舗菓子店', color: '#a1424a',
+      stops: [
+        { id: 'classic-toshimaya', reason: '鳩サブレーの元祖。明治28年創業' },
+        { id: 'classic-kamakuragoro', reason: 'すぐ近く。月うさぎの「鎌倉半月」' },
+        { id: 'classic-kosuzu', reason: '銅鍋でじっくり練り上げるわらび餅' },
+        { id: 'classic-mameya', reason: '70種類以上から選べる豆菓子専門店' },
+        { id: 'classic-beniya', reason: '八幡宮前本店。「クルミッ子」で締めくくり' },
+      ],
+    },
+  ];
+
+  function renderPresetList() {
+    const listEl = document.getElementById('preset-list');
+    if (!listEl) return;
+    listEl.innerHTML = presetRoutes.map(preset => {
+      const validCount = preset.stops.filter(s => markersById[s.id]).length;
+      return `<button class="preset-card" type="button" data-preset-id="${preset.id}" style="border-left-color:${preset.color};">
+        <div class="preset-title">${escapeHtml(preset.title)}</div>
+        <div class="preset-subtitle">${escapeHtml(preset.subtitle)}(${validCount}箇所)</div>
+      </button>`;
+    }).join('');
+
+    listEl.querySelectorAll('.preset-card').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const preset = presetRoutes.find(p => p.id === btn.dataset.presetId);
+        if (!preset) return;
+        aiStatusArea.innerHTML = '';
+        renderAiResult({ summary: `📋 ${preset.title} — ${preset.subtitle}`, stops: preset.stops });
+      });
+    });
+  }
 
   try {
     aiKeyInput.value = localStorage.getItem(AI_KEY_STORAGE) || '';
@@ -2004,6 +2336,7 @@ ${JSON.stringify(spotContext)}
   }
 
   aiSubmitBtn.addEventListener('click', requestRouteSuggestion);
+  renderPresetList();
 </script>
 
 </body>
