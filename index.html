@@ -153,6 +153,22 @@
     transform: rotate(45deg);
     font-size: 13px;
   }
+  .drama3-pin {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 50% 50% 50% 0;
+    background: #d68910;
+    border: 2px solid #ffffff;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+    transform: rotate(-45deg);
+  }
+  .drama3-pin span {
+    transform: rotate(45deg);
+    font-size: 13px;
+  }
   .cafe-pin {
     display: flex;
     align-items: center;
@@ -292,6 +308,16 @@
     height: 10px;
     border-radius: 50% 50% 50% 0;
     background: #16a085;
+    margin-right: 6px;
+    vertical-align: middle;
+    transform: rotate(-45deg);
+  }
+  .map-legend .pin-drama3 {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50% 50% 50% 0;
+    background: #d68910;
     margin-right: 6px;
     vertical-align: middle;
     transform: rotate(-45deg);
@@ -973,6 +999,20 @@
   ];
 
   // ------------------------------------------------------------
+  // ドラマ「続・続・最後から二番目の恋」ロケ地データ(2025年放送のシリーズ第3弾)
+  // 極楽寺駅・サカノシタ・御霊神社・力餅家・鎌倉市役所・稲村ヶ崎公園など前2作と共通の
+  // 定番ロケ地はdramaSpots/sequelDramaSpots側に既存のため、このシーズンで新たに
+  // 登場した鎌倉市内のロケ地のみをオレンジ色の🎞ピンとして追加する
+  // ------------------------------------------------------------
+  const sequel2DramaSpots = [
+    { id: 'sequel2-arajima',      name: '季節料理あら珠',       lat: 35.324009, lng: 139.554216, memo: '鶴岡八幡宮すぐそばの老舗和食店。和平と伊佐山市長がそばを食べるシーンに登場', images: [] },
+    { id: 'sequel2-amandanblue',  name: 'アマンダンブルー鎌倉', lat: 35.30897,  lng: 139.546261, memo: '材木座海岸近くのデザイナーズゲストハウス。市長の誕生日シーンのロケ地', images: [] },
+    { id: 'sequel2-ishiwatari',   name: '古民家スタジオ・イシワタリ', lat: 35.3138, lng: 139.5385, memo: '国登録有形文化財(旧田島屋材木店)を活用した撮影スタジオ。由比ヶ浜駅すぐ', images: [] },
+    { id: 'sequel2-gardenhouse',  name: 'GARDEN HOUSE KAMAKURA', lat: 35.319568, lng: 139.547862, memo: '築50年以上のアトリエを改装したレストラン。鎌倉駅西口すぐ', images: [] },
+    { id: 'sequel2-venuscafe',    name: 'Venus Cafe',          lat: 35.3048864, lng: 139.5319281, memo: '1955年創業、鎌倉の海岸沿いで最も歴史のあるカフェ', images: [] },
+  ];
+
+  // ------------------------------------------------------------
   // おすすめ古民家カフェ(茶色の🏠ピンで表示)
   //   address : 番地(Googleマップ検索リンクの精度を上げるために使用)
   //   image   : 紹介用の写真URL(店の公式サイトや観光サイトから引用。存在しない場合はnull)
@@ -1168,7 +1208,7 @@
   }
 
   function updateLegendCount() {
-    const total = spots.length + dramaSpots.length + sequelDramaSpots.length + oldHouseCafes.length + dateSpots.length + insiderSpots.length + classicSpots.length;
+    const total = allSpotsFlat.length;
     const visitedCount = Object.keys(visited).filter(id => visited[id]).length;
     const el = document.getElementById('visited-count-text');
     if (el) el.textContent = `訪問済み: ${visitedCount} / ${total}`;
@@ -1417,6 +1457,7 @@
   });
   registerGroup('drama', '最後から二番目の恋 ロケ地', `<span class="pin"></span>`);
   registerGroup('drama2', '続・最後から二番目の恋 ロケ地', `<span class="pin-drama2"></span>`);
+  registerGroup('drama3', '続・続・最後から二番目の恋 ロケ地', `<span class="pin-drama3"></span>`);
   registerGroup('cafe', 'おすすめ古民家カフェ', `<span class="pin-cafe"></span>`);
   registerGroup('date', 'デートスポット', `<span class="pin-date"></span>`);
   registerGroup('insider', '鎌倉通のこだわり店', `<span class="pin-insider"></span>`);
@@ -1512,6 +1553,40 @@
       <div>
         ${carouselHtml(spot)}
         <span class="popup-category" style="background:#16a085;">続・最後から二番目の恋</span>
+        <button class="favorite-toggle-btn" data-id="${spot.id}" type="button">${isFavorite(spot.id) ? '⭐' : '☆'}</button>
+        <div><strong>${spot.name}</strong></div>
+        ${spot.memo ? `<div class="popup-memo">${spot.memo}</div>` : ''}
+        <div class="visit-section" data-id="${spot.id}">${visitSectionHtml(spot.id)}</div>
+      </div>
+    `;
+    marker.bindPopup(popupHtml());
+    marker.on('popupopen', () => marker.setPopupContent(popupHtml()));
+
+    markersById[spot.id] = marker;
+    updateBadge(spot.id, latlng);
+    updateFavoriteBadge(spot.id, latlng);
+  });
+
+  // ------------------------------------------------------------
+  // ドラマ「続・続・最後から二番目の恋」ロケ地をオレンジ色の🎞ピンとして地図に追加
+  // ------------------------------------------------------------
+  const drama3Icon = L.divIcon({
+    className: '',
+    html: '<div class="drama3-pin"><span>🎞</span></div>',
+    iconSize: [26, 26],
+    iconAnchor: [13, 26],
+    popupAnchor: [0, -24],
+  });
+
+  sequel2DramaSpots.forEach(spot => {
+    const latlng = [spot.lat, spot.lng];
+    idToGroupKey[spot.id] = 'drama3';
+    const marker = L.marker(latlng, { icon: drama3Icon }).addTo(layerGroups.drama3.layer);
+
+    const popupHtml = () => `
+      <div>
+        ${carouselHtml(spot)}
+        <span class="popup-category" style="background:#d68910;">続・続・最後から二番目の恋</span>
         <button class="favorite-toggle-btn" data-id="${spot.id}" type="button">${isFavorite(spot.id) ? '⭐' : '☆'}</button>
         <div><strong>${spot.name}</strong></div>
         ${spot.memo ? `<div class="popup-memo">${spot.memo}</div>` : ''}
@@ -1910,7 +1985,7 @@
   // ------------------------------------------------------------
   // サイドバー(スポット一覧)
   // ------------------------------------------------------------
-  const allSpotsFlat = spots.concat(dramaSpots, sequelDramaSpots, oldHouseCafes, dateSpots, insiderSpots, classicSpots);
+  const allSpotsFlat = spots.concat(dramaSpots, sequelDramaSpots, sequel2DramaSpots, oldHouseCafes, dateSpots, insiderSpots, classicSpots);
 
   const sidebarToggle = L.control({ position: 'topleft' });
   sidebarToggle.onAdd = function () {
